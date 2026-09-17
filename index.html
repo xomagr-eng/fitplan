@@ -1759,14 +1759,29 @@ $('#fsBtn').addEventListener('click',()=>{
     else { (d.exitFullscreen||d.webkitExitFullscreen).call(d); }
   }catch(e){ alert('Η πλήρης οθόνη δεν υποστηρίζεται εδώ. Σε iPhone: «Κοινή χρήση → Προσθήκη στην αρχική οθόνη» και άνοιξέ το από το εικονίδιο.'); }
 });
-// install prompt (Android/desktop Chrome, when served)
+// install: native prompt when available, otherwise show step-by-step help
 let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').style.display='inline-block'; });
+function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true; }
+function inAppBrowser(){ return /FBAN|FBAV|Instagram|Line|Viber|Twitter|Pinterest|Snapchat|MicroMessenger|GSA/i.test(navigator.userAgent); }
+function showInstallHelp(){
+  const ua=navigator.userAgent, isIOS=/iphone|ipad|ipod/i.test(ua)||(/Mac/.test(ua)&&'ontouchend'in document);
+  let msg;
+  if(inAppBrowser())
+    msg='📲 Άνοιξες τον σύνδεσμο ΜΕΣΑ σε άλλη εφαρμογή (π.χ. Viber/Messenger/Instagram/Facebook), που ΔΕΝ επιτρέπει εγκατάσταση.\n\n👉 Πάτησε το μενού (⋮ ή …) πάνω δεξιά → «Άνοιγμα σε Chrome/Safari» και μετά ξαναδοκίμασε.';
+  else if(isIOS)
+    msg='📱 iPhone / iPad (Safari):\n\n1) Πάτα το κουμπί «Κοινή χρήση»  ⬆️  (τετράγωνο με βελάκι, κάτω στη μπάρα)\n2) Κύλησε και διάλεξε «Προσθήκη στην αρχική οθόνη»\n3) Πάτα «Προσθήκη»\n\n✅ Θα εμφανιστεί με εικονίδιο 🏋️ και θα ανοίγει σε πλήρη οθόνη, offline.\n\n(Σημ: στο iPhone δεν υπάρχει αυτόματο κουμπί «Install» — μόνο έτσι.)';
+  else
+    msg='💻📱 Chrome / Edge:\n\n• Μενού  ⋮  (πάνω δεξιά) → «Εγκατάσταση εφαρμογής» ή «Προσθήκη στην αρχική οθόνη»\n• Σε υπολογιστή: εικονίδιο ⊕ στη γραμμή διευθύνσεων (δεξιά)\n\nΑν δεν εμφανίζεται η επιλογή: ανανέωσε τη σελίδα (πάτησέ την και χρησιμοποίησέ την λίγο) και δοκίμασε ξανά. Πρέπει να είσαι στο https://xomagr-eng.github.io/fitplan/ (όχι μέσα σε άλλη εφαρμογή).';
+  alert(msg);
+}
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; const b=$('#installBtn'); if(b){ b.style.display='inline-block'; b.textContent='⬇️ Εγκατάσταση'; } });
 $('#installBtn').addEventListener('click',async()=>{
-  if(!deferredPrompt) return;
-  deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').style.display='none';
+  if(deferredPrompt){ deferredPrompt.prompt(); const r=await deferredPrompt.userChoice; deferredPrompt=null; if(r&&r.outcome==='accepted') $('#installBtn').style.display='none'; }
+  else showInstallHelp();
 });
-window.addEventListener('appinstalled',()=>{ $('#installBtn').style.display='none'; });
+window.addEventListener('appinstalled',()=>{ const b=$('#installBtn'); if(b) b.style.display='none'; });
+// always offer an install path (unless already installed as an app)
+if(!isStandalone()){ const b=$('#installBtn'); if(b) b.style.display='inline-block'; }
 
 /* auto-load on start: profiles store */
 (function(){
