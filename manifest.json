@@ -1,0 +1,17 @@
+{
+  "name": "FitPlan — Διατροφή & Γυμναστική",
+  "short_name": "FitPlan",
+  "description": "Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής. Λειτουργεί offline.",
+  "lang": "el",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f1720",
+  "theme_color": "#22c1a4",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

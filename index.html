@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#22c1a4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitPlan">
+<meta name="description" content="Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής — λειτουργεί offline.">
+<link rel="manifest" id="manifestLink">
+<link rel="apple-touch-icon" id="touchIcon">
+<link rel="icon" id="favIcon">
+<title>FitPlan — Διατροφή & Γυμναστική</title>
+<style>
+:root{
+  --bg:#0f1720; --panel:#161f2b; --panel2:#1d2836; --line:#26323f;
+  --text:#e8eef4; --muted:#93a3b4; --brand:#22c1a4; --brand2:#2d9cdb;
+  --warn:#f2a03d; --bad:#e5556e; --good:#3ecf8e; --chip:#223140;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f5f8; --panel:#ffffff; --panel2:#f6f9fb; --line:#e2e8ef;
+    --text:#132330; --muted:#5c6b7a; --brand:#0f9e86; --brand2:#1f7fc0;
+    --chip:#eef3f7; --shadow:0 10px 30px rgba(30,50,70,.12);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brand2)}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 80px;
+  padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));
+  padding-top:max(18px,env(safe-area-inset-top))}
+header.app{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:16px 0 10px;border-bottom:1px solid var(--line);margin-bottom:18px;
+}
+.logo{
+  width:46px;height:46px;border-radius:12px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  display:grid;place-items:center;font-size:24px;box-shadow:var(--shadow);
+}
+.app h1{font-size:1.35rem;margin:0;letter-spacing:.3px}
+.app .sub{color:var(--muted);font-size:.85rem;margin-top:2px}
+.spacer{flex:1}
+button,.btn{
+  font:inherit;cursor:pointer;border:1px solid var(--line);
+  background:var(--panel2);color:var(--text);border-radius:10px;
+  padding:9px 14px;transition:.15s;
+}
+button:hover,.btn:hover{border-color:var(--brand)}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));border:none;color:#03222b;font-weight:600}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:transparent}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+h2.section{font-size:1.05rem;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+h2.section .ic{font-size:1.2rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}}
+label.field{display:block;font-size:.82rem;color:var(--muted);margin-bottom:5px}
+input,select{
+  width:100%;font:inherit;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--panel2);color:var(--text);
+}
+input:focus,select:focus{outline:none;border-color:var(--brand)}
+.hint{font-size:.75rem;color:var(--muted);margin-top:4px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1;min-width:90px;padding:8px}
+.seg button.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#03222b;font-weight:600}
+.results{display:none}
+.results.show{display:block;animation:fade .4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.stat .v{font-size:1.5rem;font-weight:700}
+.stat .l{font-size:.78rem;color:var(--muted);margin-top:2px}
+.stat .u{font-size:.8rem;color:var(--muted)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:600}
+.b-good{background:rgba(62,207,142,.16);color:var(--good)}
+.b-warn{background:rgba(242,160,61,.16);color:var(--warn)}
+.b-bad{background:rgba(229,85,110,.16);color:var(--bad)}
+.macrobar{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:10px 0}
+.macrobar span{display:block}
+.mp{background:#e5556e}.mc{background:#2d9cdb}.mf{background:#f2a03d}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend b{color:var(--text)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.cmpleg{display:flex;gap:16px;font-size:.82rem;margin:2px 0 12px;color:var(--muted)}
+.cmpmetric{margin-bottom:10px}
+.cmpmetric .lab{font-size:.82rem;color:var(--muted);margin-bottom:2px}
+.cmprow{display:flex;align-items:center;gap:8px;margin:2px 0}
+.cmprow .bar{height:16px;border-radius:5px;min-width:3px;transition:width .35s}
+.cmprow .val{font-size:.8rem;white-space:nowrap;font-weight:600}
+.barA{background:var(--brand2)}
+.barB{background:var(--warn)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{border-radius:999px;padding:8px 16px}
+.tabs button.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#03222b;font-weight:600}
+.tabpane{display:none}
+.tabpane.show{display:block}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.4px}
+.day{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.day h3{margin:0 0 8px;font-size:1rem;display:flex;justify-content:space-between;align-items:center}
+.day h3 .kcal{font-size:.8rem;color:var(--brand);font-weight:600}
+.meal{padding:8px 0;border-bottom:1px dashed var(--line)}
+.meal:last-child{border-bottom:none}
+.meal .mt{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.meal .mn{font-weight:600}
+.meal .mm{font-size:.8rem;color:var(--muted)}
+.wk{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.78rem;display:inline-block;margin:2px}
+.ex{padding:8px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:12px}
+.ex:last-child{border-bottom:none}
+.ex .name{font-weight:600}
+.ex .musc{font-size:.76rem;color:var(--muted)}
+.ex .sr{font-size:.85rem;color:var(--brand);white-space:nowrap;text-align:right}
+.note{background:var(--panel2);border-left:3px solid var(--brand);padding:10px 14px;border-radius:8px;font-size:.86rem;margin:10px 0}
+.tips li{margin-bottom:7px}
+.disclaimer{font-size:.78rem;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:16px}
+footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:12px}
+@media print{
+  body{background:#fff;color:#000}
+  .no-print{display:none!important}
+  .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+  .tabpane{display:block!important}
+  .tabs{display:none}
+  .day{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <div class="logo">🏋️</div>
+    <div>
+      <h1>FitPlan</h1>
+      <div class="sub">Αυτόματα προγράμματα Διατροφής, Δίαιτας &amp; Γυμναστικής</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="no-print" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span title="Προφίλ / μέλος" style="font-size:1.1rem">👤</span>
+      <select id="profileSel" style="width:auto;min-width:130px;padding:8px 10px"></select>
+      <button class="btn-ghost" id="profNew" title="Νέο προφίλ" style="padding:8px 10px">➕</button>
+      <button class="btn-ghost" id="profRen" title="Μετονομασία προφίλ" style="padding:8px 10px">✏️</button>
+      <button class="btn-ghost" id="profDel" title="Διαγραφή προφίλ" style="padding:8px 10px">🗑️</button>
+      <button class="btn-ghost" id="colorBtn" title="Χρώμα εφαρμογής" style="padding:8px 10px">🎨</button>
+      <button class="btn-ghost" id="fsBtn" title="Πλήρης οθόνη" style="padding:8px 10px">⛶</button>
+      <button class="btn-ghost" id="installBtn" title="Εγκατάσταση εφαρμογής" style="padding:8px 10px;display:none">⬇️ Εγκατάσταση</button>
+      <button class="btn-ghost" id="themeBtn" title="Εναλλαγή θέματος" style="padding:8px 10px">🌓</button>
+    </div>
+  </header>
+
+  <div id="palette" class="card no-print" style="display:none;padding:14px">
+    <div style="font-size:.9rem;font-weight:600;margin-bottom:10px">🎨 Χρώμα εφαρμογής</div>
+    <div id="swatches" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"></div>
+  </div>
+
+  <!-- ====== FORM ====== -->
+  <div class="card no-print" id="formCard">
+    <h2 class="section"><span class="ic">📋</span>Τα στοιχεία σου</h2>
+    <div class="grid g3">
+      <div>
+        <label class="field">Όνομα (προαιρετικό)</label>
+        <input id="name" placeholder="π.χ. Γιώργος">
+      </div>
+      <div>
+        <label class="field">Φύλο</label>
+        <div class="seg" id="sexSeg">
+          <button data-v="male" class="active">Άνδρας</button>
+          <button data-v="female">Γυναίκα</button>
+        </div>
+      </div>
+      <div>
+        <label class="field">Ηλικία (έτη)</label>
+        <input id="age" type="number" min="14" max="90" value="30">
+      </div>
+      <div>
+        <label class="field">Ύψος (cm)</label>
+        <input id="height" type="number" min="120" max="220" value="175">
+      </div>
+      <div>
+        <label class="field">Βάρος (kg)</label>
+        <input id="weight" type="number" min="35" max="250" step="0.1" value="80">
+      </div>
+      <div>
+        <label class="field">Λίπος σώματος % (προαιρετικό)</label>
+        <input id="bodyfat" type="number" min="3" max="60" step="0.1" placeholder="π.χ. 20">
+        <div class="hint">Αν το ξέρεις, ο υπολογισμός γίνεται ακριβέστερος (Katch-McArdle).</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="field">Επίπεδο δραστηριότητας (εκτός γυμναστηρίου)</label>
+      <div class="seg" id="actSeg">
+        <button data-v="1.2">Καθιστική</button>
+        <button data-v="1.375" class="active">Ελαφριά</button>
+        <button data-v="1.55">Μέτρια</button>
+        <button data-v="1.725">Έντονη</button>
+        <button data-v="1.9">Πολύ έντονη</button>
+      </div>
+      <div class="hint">Καθιστική: γραφείο, λίγη κίνηση · Ελαφριά: 1-2 φορές/εβδ · Μέτρια: 3-5 · Έντονη: 6-7 · Πολύ έντονη: σωματική εργασία/αθλητής.</div>
+    </div>
+
+    <div style="margin-top:16px;border:1px dashed var(--line);border-radius:14px;padding:14px;background:var(--panel2)">
+      <div style="font-weight:600;margin-bottom:4px">📏 Μετρήσεις με μεζούρα <span style="color:var(--muted);font-weight:400">(προαιρετικό · σε cm)</span></div>
+      <div class="hint" style="margin-bottom:12px">Συμπλήρωσε <b>λαιμό &amp; μέση</b> (και <b>γοφούς</b> αν είσαι γυναίκα) και η εφαρμογή εκτιμά αυτόματα το <b>λίπος σώματος</b> (μέθοδος U.S. Navy) &amp; τον δείκτη <b>μέσης/ύψους</b>, για ακριβέστερο πρόγραμμα. Τα υπόλοιπα κρατιούνται για παρακολούθηση προόδου.</div>
+      <div class="grid g3">
+        <div><label class="field">Λαιμός</label><input id="mNeck" type="number" min="20" max="80" step="0.5" placeholder="cm"></div>
+        <div><label class="field">Μέση / κοιλιά</label><input id="mWaist" type="number" min="40" max="200" step="0.5" placeholder="cm"></div>
+        <div><label class="field">Γοφοί / περιφέρεια</label><input id="mHip" type="number" min="50" max="200" step="0.5" placeholder="cm"></div>
+        <div><label class="field">Στήθος</label><input id="mChest" type="number" min="50" max="200" step="0.5" placeholder="cm"></div>
+        <div><label class="field">Μπράτσο (δικέφαλος)</label><input id="mArm" type="number" min="15" max="80" step="0.5" placeholder="cm"></div>
+        <div><label class="field">Μηρός</label><input id="mThigh" type="number" min="30" max="120" step="0.5" placeholder="cm"></div>
+      </div>
+      <div class="hint" style="margin-top:10px">📐 <b>Πώς να μετράς:</b> Λαιμός ακριβώς κάτω από τον λάρυγγα · Μέση: άνδρες στο ύψος του αφαλού, γυναίκες στο πιο στενό σημείο · Γοφοί στο πιο φαρδύ σημείο. Στάσου όρθιος/-α &amp; χαλαρά, χωρίς να σφίγγεις τη μεζούρα.</div>
+    </div>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div>
+        <label class="field">Στόχος</label>
+        <div class="seg" id="goalSeg" style="flex-direction:column">
+          <button data-v="lose" class="active">⬇️ Απώλεια βάρους</button>
+          <button data-v="maintain">⚖️ Συντήρηση</button>
+          <button data-v="gain">⬆️ Αύξηση βάρους/μυών</button>
+        </div>
+      </div>
+      <div>
+        <label class="field">Ρυθμός / ένταση</label>
+        <div class="seg" id="rateSeg" style="flex-direction:column">
+          <button data-v="mild">Ήπιος</button>
+          <button data-v="normal" class="active">Κανονικός</button>
+          <button data-v="aggr">Επιθετικός</button>
+        </div>
+      </div>
+      <div>
+        <label class="field">Διατροφική προτίμηση</label>
+        <select id="diet">
+          <option value="mediterranean">Μεσογειακή (προτεινόμενη)</option>
+          <option value="omnivore">Παμφάγος / κλασική</option>
+          <option value="highprotein">Υψηλή πρωτεΐνη</option>
+          <option value="vegetarian">Χορτοφαγική</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="goalWeightRow" style="margin-top:14px;display:none">
+      <label class="field" id="goalWeightLbl">🎯 Πόσα κιλά θέλεις να χάσεις; (kg)</label>
+      <div class="grid g2">
+        <input id="goalWeight" type="number" min="0" max="120" step="0.5" placeholder="π.χ. 8">
+        <div class="hint" style="align-self:center">Άφησέ το κενό αν δεν έχεις συγκεκριμένο νούμερο — θα υπολογιστεί ο ρυθμός με βάση την ένταση που διάλεξες. Αν το βάλεις, η εφαρμογή υπολογίζει πόσο θα κρατήσει και πότε θα πετύχεις τον στόχο, και φτιάχνει ανάλογα όλα τα προγράμματα.</div>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div>
+        <label class="field">Χώρος προπόνησης</label>
+        <div class="seg" id="placeSeg">
+          <button data-v="gym" class="active">🏋️ Γυμναστήριο</button>
+          <button data-v="home">🏠 Σπίτι</button>
+        </div>
+      </div>
+      <div>
+        <label class="field">Ημέρες προπόνησης / εβδομάδα</label>
+        <select id="days">
+          <option value="3" selected>3 ημέρες</option>
+          <option value="4">4 ημέρες</option>
+          <option value="5">5 ημέρες</option>
+          <option value="6">6 ημέρες</option>
+        </select>
+      </div>
+      <div>
+        <label class="field">Εμπειρία</label>
+        <div class="seg" id="expSeg">
+          <button data-v="beg" class="active">Αρχάριος</button>
+          <button data-v="int">Μέσος</button>
+          <button data-v="adv">Προχ.</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-primary" id="genBtn">⚙️ Δημιουργία προγράμματος</button>
+      <button class="btn-ghost" id="loadBtn">↺ Φόρτωση αποθηκευμένου</button>
+      <button class="btn-ghost" id="resetBtn">Καθαρισμός</button>
+    </div>
+    <div class="disclaimer">
+      ⚠️ <b>Ιατρική αποποίηση:</b> Η εφαρμογή δίνει εκτιμήσεις βασισμένες σε γενικές επιστημονικές
+      εξισώσεις (Mifflin-St Jeor / Katch-McArdle) και δεν υποκαθιστά γιατρό ή διαιτολόγο.
+      Συμβουλευτείτε ειδικό πριν ξεκινήσετε δίαιτα ή πρόγραμμα άσκησης, ιδίως με προϋπάρχοντα προβλήματα υγείας, εγκυμοσύνη ή φαρμακευτική αγωγή.
+    </div>
+  </div>
+
+  <!-- ====== RESULTS ====== -->
+  <div id="results" class="results">
+    <div class="toolbar no-print">
+      <button class="btn-ghost" id="editBtn">✏️ Επεξεργασία στοιχείων</button>
+      <button class="btn-ghost" id="saveBtn">💾 Αποθήκευση</button>
+      <button class="btn-primary" id="printBtn">🖨️ Εκτύπωση / PDF</button>
+    </div>
+
+    <div class="card">
+      <h2 class="section"><span class="ic">📊</span>Η ανάλυσή σου <span id="greet" style="color:var(--muted);font-weight:400;font-size:.9rem"></span></h2>
+      <div class="stats">
+        <div class="stat"><div class="v" id="sBmi">–</div><div class="l">BMI <span id="sBmiCat"></span></div></div>
+        <div class="stat"><div class="v" id="sBmr">–</div><div class="l">BMR (θερμ. ηρεμίας)</div></div>
+        <div class="stat"><div class="v" id="sTdee">–</div><div class="l">TDEE (συντήρηση)</div></div>
+        <div class="stat"><div class="v" id="sTarget">–</div><div class="l" id="sTargetL">Θερμίδες στόχου</div></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div>
+          <div style="font-size:.9rem;margin-bottom:4px">Κατανομή μακροθρεπτικών (ημερησίως)</div>
+          <div class="macrobar" id="macrobar">
+            <span class="mp"></span><span class="mc"></span><span class="mf"></span>
+          </div>
+          <div class="legend">
+            <span><span class="dot mp"></span><b id="mP">–</b> Πρωτεΐνη</span>
+            <span><span class="dot mc"></span><b id="mC">–</b> Υδατάνθρακες</span>
+            <span><span class="dot mf"></span><b id="mF">–</b> Λίπος</span>
+          </div>
+        </div>
+        <div>
+          <div class="grid g2">
+            <div class="stat"><div class="v" id="sWater">–</div><div class="l">Νερό / ημέρα</div></div>
+            <div class="stat"><div class="v" id="sIdeal">–</div><div class="l">Υγιές εύρος βάρους</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="stats" id="extraStats" style="margin-top:12px"></div>
+      <div class="note" id="targetNote"></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs no-print">
+        <button data-tab="diet" class="active">🍽️ Διατροφή (7 ημέρες)</button>
+        <button data-tab="shop">🛒 Λίστα αγορών</button>
+        <button data-tab="workout">💪 Γυμναστική</button>
+        <button data-tab="week">🗓️ Εβδομαδιαίο πλάνο</button>
+        <button data-tab="progress">📈 Πρόοδος</button>
+        <button data-tab="family">👪 Οικογένεια</button>
+        <button data-tab="tips">💡 Συμβουλές</button>
+      </div>
+
+      <div class="tabpane show" id="tab-diet">
+        <h2 class="section"><span class="ic">🍽️</span>Πρόγραμμα διατροφής</h2>
+        <div class="note" id="dietNote"></div>
+        <div id="dietOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-shop">
+        <h2 class="section"><span class="ic">🛒</span>Λίστα αγορών (εβδομάδας)</h2>
+        <div class="toolbar no-print" style="justify-content:flex-start;margin-bottom:10px;align-items:center">
+          <label style="font-size:.85rem;color:var(--muted)">👥 Άτομα:</label>
+          <select id="shopPeople" style="width:auto">
+            <option value="1">×1</option><option value="2">×2</option><option value="3">×3</option>
+            <option value="4">×4</option><option value="5">×5</option><option value="6">×6</option>
+          </select>
+          <button class="btn-ghost" id="shopTxtBtn">📄 Εξαγωγή .txt</button>
+          <button class="btn-ghost" id="shopImgBtn">🖼️ Εικόνα (.png)</button>
+          <button class="btn-ghost" id="shopPrintBtn">🖨️ Εκτύπωση λίστας</button>
+          <span style="width:100%;height:0"></span>
+          <label style="font-size:.82rem;color:var(--muted)">QR ποιότητα:</label>
+          <select id="qrEclShop" style="width:auto" title="Πιο υψηλή = πιο ανθεκτικό στο σκανάρισμα (λίγο μεγαλύτερο)">
+            <option value="L">Κανονική</option><option value="M">Υψηλή</option><option value="Q">Μέγιστη</option>
+          </select>
+          <label style="font-size:.82rem;color:var(--muted)">μέγεθος:</label>
+          <select id="qrSizeShop" style="width:auto">
+            <option value="small">Μικρό</option><option value="medium">Μεσαίο</option><option value="large">Μεγάλο</option>
+          </select>
+        </div>
+        <div id="shopOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-workout">
+        <h2 class="section"><span class="ic">💪</span>Πρόγραμμα γυμναστικής</h2>
+        <div class="note" id="woNote"></div>
+        <div id="woOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-week">
+        <h2 class="section"><span class="ic">🗓️</span>Εβδομαδιαίο πλάνο</h2>
+        <div id="weekOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-progress">
+        <h2 class="section"><span class="ic">📈</span>Ιστορικό &amp; πρόοδος</h2>
+        <div class="note">Κατέγραψε βάρος &amp; μετρήσεις τακτικά (π.χ. κάθε 1-2 εβδομάδες) και δες την πορεία σου. Τα δεδομένα μένουν στη συσκευή σου.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+          <div>
+            <label class="field">Ημερομηνία μέτρησης</label>
+            <input id="recDate" type="date">
+          </div>
+          <button class="btn-primary" id="recBtn">➕ Καταγραφή μέτρησης</button>
+          <span class="hint" style="align-self:center">Χρησιμοποιεί τις τρέχουσες τιμές (βάρος + μεζούρα) από τη φόρμα.</span>
+        </div>
+        <div class="toolbar no-print" style="justify-content:flex-start;margin-bottom:12px">
+          <button class="btn-ghost" id="exportBtn">⬇️ Εξαγωγή (backup)</button>
+          <button class="btn-ghost" id="importBtn">⬆️ Εισαγωγή</button>
+          <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+        </div>
+        <div id="progChips" class="tabs" style="margin-bottom:8px"></div>
+        <div id="chartWrap" style="overflow-x:auto"></div>
+        <div id="histTable" style="margin-top:14px"></div>
+      </div>
+
+      <div class="tabpane" id="tab-family">
+        <h2 class="section"><span class="ic">👪</span>Οικογένεια</h2>
+        <h3 style="margin:6px 0 8px">⚖️ Σύγκριση δύο μελών</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+          <select id="cmpA" style="width:auto;min-width:130px"></select>
+          <span style="color:var(--muted)">↔</span>
+          <select id="cmpB" style="width:auto;min-width:130px"></select>
+        </div>
+        <div id="cmpChart"></div>
+        <div id="cmpOut" style="overflow-x:auto"></div>
+        <h3 style="margin:20px 0 8px">🛒 Συγκεντρωτική λίστα αγορών (όλα τα μέλη)</h3>
+        <div class="toolbar no-print" style="justify-content:flex-start;margin-bottom:10px">
+          <button class="btn-ghost" id="famTxtBtn">📄 Εξαγωγή .txt</button>
+          <button class="btn-ghost" id="famImgBtn">🖼️ Εικόνα (.png)</button>
+          <button class="btn-ghost" id="famPrintBtn">🖨️ Εκτύπωση λίστας</button>
+          <span style="width:100%;height:0"></span>
+          <label style="font-size:.82rem;color:var(--muted)">QR ποιότητα:</label>
+          <select id="qrEclFam" style="width:auto">
+            <option value="L">Κανονική</option><option value="M">Υψηλή</option><option value="Q">Μέγιστη</option>
+          </select>
+          <label style="font-size:.82rem;color:var(--muted)">μέγεθος:</label>
+          <select id="qrSizeFam" style="width:auto">
+            <option value="small">Μικρό</option><option value="medium">Μεσαίο</option><option value="large">Μεγάλο</option>
+          </select>
+        </div>
+        <div id="famShopOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-tips">
+        <h2 class="section"><span class="ic">💡</span>Πρακτικές συμβουλές</h2>
+        <div id="tipsOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    FitPlan · Λειτουργεί 100% offline στον browser σου · Τα δεδομένα μένουν στη συσκευή σου (localStorage).
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================= STATE / UI HELPERS ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const state = {sex:'male', act:1.375, goal:'lose', rate:'normal', place:'gym', exp:'beg'};
+
+function seg(id, key){
+  $$('#'+id+' button').forEach(b=>b.addEventListener('click',()=>{
+    $$('#'+id+' button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const v = b.dataset.v;
+    state[key] = (id==='actSeg') ? parseFloat(v) : v;
+  }));
+}
+seg('sexSeg','sex'); seg('actSeg','act'); seg('goalSeg','goal');
+seg('rateSeg','rate'); seg('placeSeg','place'); seg('expSeg','exp');
+
+// show/hide & relabel the "how much to lose/gain" field based on goal
+function updateGoalWeightRow(){
+  const row=$('#goalWeightRow');
+  if(state.goal==='maintain'){ row.style.display='none'; return; }
+  row.style.display='block';
+  $('#goalWeightLbl').textContent = state.goal==='lose'
+    ? '🎯 Πόσα κιλά θέλεις να χάσεις; (kg)'
+    : '🎯 Πόσα κιλά θέλεις να βάλεις; (kg)';
+}
+$$('#goalSeg button').forEach(b=>b.addEventListener('click',updateGoalWeightRow));
+updateGoalWeightRow();
+
+// theme toggle
+$('#themeBtn').addEventListener('click',()=>{
+  const r=document.documentElement;
+  const cur=r.getAttribute('data-theme');
+  r.setAttribute('data-theme', cur==='dark'?'light':'dark');
+});
+
+// accent color customization
+const ACCENTS=[
+  ['Τιρκουάζ','#22c1a4','#2d9cdb'],
+  ['Μπλε','#3b82f6','#1d4ed8'],
+  ['Μωβ','#8b5cf6','#6d28d9'],
+  ['Ροζ','#ec4899','#be185d'],
+  ['Πορτοκαλί','#f59e0b','#ea580c'],
+  ['Κόκκινο','#ef4444','#b91c1c'],
+  ['Πράσινο','#10b981','#047857'],
+  ['Χρυσό','#d4af37','#a67c00']
+];
+function darken(hex,f){ f=f||0.8; const n=parseInt(hex.slice(1),16); let r=Math.round(((n>>16)&255)*f),g=Math.round(((n>>8)&255)*f),b=Math.round((n&255)*f); return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1); }
+function applyAccent(b1,b2){
+  const r=document.documentElement.style;
+  r.setProperty('--brand',b1); r.setProperty('--brand2',b2||b1);
+  const tc=document.querySelector('meta[name=theme-color]'); if(tc) tc.content=b1;
+}
+function saveAccent(a){ try{ localStorage.setItem('fitplan_accent',JSON.stringify(a)); }catch(e){} }
+function loadAccent(){ try{ return JSON.parse(localStorage.getItem('fitplan_accent')); }catch(e){ return null; } }
+function buildSwatches(){
+  const sw=$('#swatches');
+  sw.innerHTML = ACCENTS.map((a,i)=>`<button class="swatch" data-i="${i}" title="${a[0]}" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--line);background:linear-gradient(135deg,${a[1]},${a[2]});cursor:pointer"></button>`).join('')
+    + `<label style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);margin-left:6px">Δικό μου <input type="color" id="customColor" value="#22c1a4" style="width:42px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer"></label>`;
+  $$('#swatches .swatch').forEach(b=>b.addEventListener('click',()=>{
+    const a=ACCENTS[+b.dataset.i]; applyAccent(a[1],a[2]); saveAccent({b1:a[1],b2:a[2]});
+  }));
+  $('#customColor').addEventListener('input',e=>{
+    const c=e.target.value; applyAccent(c,darken(c)); saveAccent({b1:c,b2:darken(c)});
+  });
+}
+$('#colorBtn').addEventListener('click',()=>{
+  const p=$('#palette'); p.style.display = p.style.display==='none'?'block':'none';
+  if(p.style.display==='block' && !$('#swatches').innerHTML) buildSwatches();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+(function(){ const a=loadAccent(); if(a&&a.b1) applyAccent(a.b1,a.b2); })();
+
+/* ================= CALCULATIONS ================= */
+function round(n){return Math.round(n);}
+function calc(){ return calcFrom(collectInputs()); }
+function calcFrom(I){
+  const age=+I.age, h=+I.height, w=+I.weight;
+  const sex=I.sex, act=parseFloat(I.act);
+  // tape measurements (cm)
+  const m={neck:parseFloat(I.mNeck), waist:parseFloat(I.mWaist),
+           hip:parseFloat(I.mHip), chest:parseFloat(I.mChest),
+           arm:parseFloat(I.mArm), thigh:parseFloat(I.mThigh)};
+  const bfManual=parseFloat(I.bodyfat);
+  const navyBF=navyBodyFat(sex,h,m.neck,m.waist,m.hip);
+  const bfSource = (!isNaN(bfManual)&&bfManual>0)?'manual':(navyBF!=null?'navy':null);
+  const bfUsed = bfSource==='manual'?bfManual:(bfSource==='navy'?navyBF:NaN);
+  const whtr = (m.waist>0)? m.waist/h : null;
+  // BMR
+  let bmr, lean=null;
+  if(!isNaN(bfUsed) && bfUsed>0){
+    lean = w*(1-bfUsed/100);
+    bmr = 370 + 21.6*lean;             // Katch-McArdle (uses lean mass)
+  } else {
+    bmr = 10*w + 6.25*h - 5*age + (sex==='male'?5:-161); // Mifflin-St Jeor
+  }
+  const tdee = bmr*act;
+  // target calories
+  const adj = {lose:{mild:-0.10,normal:-0.20,aggr:-0.25},
+               maintain:{mild:0,normal:0,aggr:0},
+               gain:{mild:0.08,normal:0.12,aggr:0.18}}[I.goal][I.rate];
+  let target = tdee*(1+adj);
+  // safety floor
+  const floor = sex==='male'?1500:1200;
+  if(target<floor) target=floor;
+  // BMI
+  const bmi = w/Math.pow(h/100,2);
+  // ideal weight range (BMI 20-25)
+  const idLo = round(20*Math.pow(h/100,2)), idHi = round(25*Math.pow(h/100,2));
+  // water
+  const water = (act>=1.55?38:32)*w/1000; // L
+  // macros — protein by goal, fat 25-30% kcal, rest carbs
+  // if body fat is known → protein per kg of LEAN mass (more accurate); else per total kg
+  let protG;
+  if(lean!=null){
+    const perLean = {lose:2.4, maintain:2.0, gain:2.2}[I.goal];
+    protG = round(perLean*lean);
+  } else {
+    const proteinPerKg = {lose:2.0, maintain:1.6, gain:1.8}[I.goal];
+    protG = round(proteinPerKg*w);
+  }
+  const fatPct = I.goal==='lose'?0.27:0.28;
+  const fatG = round((target*fatPct)/9);
+  const carbG = Math.max(0, round((target - protG*4 - fatG*9)/4));
+  // desired weight change + timeline
+  const goalKg = parseFloat(I.goalWeight);
+  const weeklyChange = Math.abs(tdee-target)*7/7700; // kg per week (7700 kcal ≈ 1 kg)
+  let targetWeight=null, weeks=null, goalDate=null;
+  if(I.goal!=='maintain' && !isNaN(goalKg) && goalKg>0){
+    targetWeight = I.goal==='lose' ? w-goalKg : w+goalKg;
+    if(weeklyChange>0){
+      weeks = goalKg/weeklyChange;
+      const d=new Date(); d.setDate(d.getDate()+Math.round(weeks*7));
+      goalDate = d.toLocaleDateString('el-GR',{day:'numeric',month:'long',year:'numeric'});
+    }
+  }
+  return {age,h,w,sex,goal:I.goal,bmr:round(bmr),tdee:round(tdee),target:round(target),
+          bmi,idLo,idHi,water,protG,carbG,fatG,adj,lean:lean!=null?round(lean):null,
+          bfUsed,bfSource,navyBF,whtr,m,
+          goalKg:isNaN(goalKg)?null:goalKg, weeklyChange, targetWeight, weeks, goalDate};
+}
+
+function bmiCat(b){
+  if(b<18.5) return {t:'Ελλιποβαρής',c:'b-warn'};
+  if(b<25)   return {t:'Φυσιολογικό',c:'b-good'};
+  if(b<30)   return {t:'Υπέρβαρος',c:'b-warn'};
+  return {t:'Παχυσαρκία',c:'b-bad'};
+}
+
+/* U.S. Navy body-fat method (Hodgdon & Beckett, 1984) — inputs in cm, returns % */
+function navyBodyFat(sex,hCm,neck,waist,hip){
+  if(!(neck>0 && waist>0 && hCm>0)) return null;
+  const IN=2.54, H=hCm/IN, N=neck/IN, W=waist/IN;
+  let bf;
+  if(sex==='male'){
+    if(W-N<=0) return null;
+    bf = 495/(1.0324 - 0.19077*Math.log10(W-N) + 0.15456*Math.log10(H)) - 450;
+  } else {
+    if(!(hip>0)) return null;
+    const Hp=hip/IN;
+    if(W+Hp-N<=0) return null;
+    bf = 495/(1.29579 - 0.35004*Math.log10(W+Hp-N) + 0.22100*Math.log10(H)) - 450;
+  }
+  if(!isFinite(bf)) return null;
+  return Math.min(60, Math.max(3, bf));
+}
+function bfCat(bf,sex){
+  const t = sex==='male'
+    ? [[6,'Αθλητικό','b-good'],[14,'Fitness','b-good'],[18,'Πολύ καλό','b-good'],[25,'Μέτριο','b-warn'],[Infinity,'Υψηλό','b-bad']]
+    : [[14,'Αθλητικό','b-good'],[21,'Fitness','b-good'],[25,'Πολύ καλό','b-good'],[32,'Μέτριο','b-warn'],[Infinity,'Υψηλό','b-bad']];
+  for(const [th,label,cls] of t){ if(bf<th) return {t:label,c:cls}; }
+}
+function whtrCat(r){
+  if(r<0.43) return {t:'Χαμηλή',c:'b-warn'};
+  if(r<0.5)  return {t:'Υγιής',c:'b-good'};
+  if(r<0.6)  return {t:'Αυξημένος κίνδυνος',c:'b-warn'};
+  return {t:'Υψηλός κίνδυνος',c:'b-bad'};
+}
+
+/* ================= FOOD DATABASE (approx kcal per standard portion) ================= */
+// tags: 'veg' = κατάλληλο για χορτοφάγους
+const FOODS = {
+  breakfast:[
+    {n:'Βρώμη με γάλα, μπανάνα & μέλι', kcal:350, p:14, note:'60g βρώμη, 250ml γάλα, 1 μπανάνα', veg:true},
+    {n:'Ελληνικό γιαούρτι 2% με καρύδια & μέλι', kcal:300, p:20, note:'200g γιαούρτι, 20g καρύδια', veg:true},
+    {n:'Ομελέτα 3 αυγά με λαχανικά & τοστ ολικής', kcal:380, p:26, note:'+ 1 φέτα ψωμί ολικής', veg:true},
+    {n:'Τοστ ολικής με αβγό & τυρί χαμηλών λιπαρών', kcal:340, p:22, note:'2 φέτες, 1 αβγό', veg:true},
+    {n:'Smoothie: γάλα, βρώμη, φρούτα & πρωτεΐνη', kcal:360, p:30, note:'μπολ ή ποτήρι', veg:true},
+    {n:'Γιαούρτι με granola & μούρα', kcal:330, p:18, note:'200g γιαούρτι, 40g granola', veg:true},
+    {n:'Ψωμί ολικής με ταχίνι & φρούτο', kcal:320, p:12, note:'2 φέτες, 1 κ.σ. ταχίνι', veg:true}
+  ],
+  snack:[
+    {n:'Φρούτο εποχής & 15 αμύγδαλα', kcal:200, p:6, note:'', veg:true},
+    {n:'Ελληνικό γιαούρτι με μέλι', kcal:170, p:14, note:'150g', veg:true},
+    {n:'Μπάρα πρωτεΐνης', kcal:200, p:18, note:'', veg:true},
+    {n:'Φρυγανιές ολικής με τυρί cottage', kcal:180, p:14, note:'', veg:true},
+    {n:'Χούμους με λαχανικά (καρότο/αγγούρι)', kcal:190, p:7, note:'', veg:true},
+    {n:'Μήλο με φυστικοβούτυρο', kcal:210, p:7, note:'1 κ.σ.', veg:true},
+    {n:'Ξηροί καρποί ανάμεικτοι', kcal:200, p:7, note:'30g', veg:true}
+  ],
+  lunch:[
+    {n:'Κοτόπουλο σχάρας με ρύζι & σαλάτα', kcal:550, p:45, note:'150g κοτόπουλο, 150g ρύζι', veg:false},
+    {n:'Σολομός ψητός με πατάτα & μπρόκολο', kcal:560, p:40, note:'150g σολομός', veg:false},
+    {n:'Φακές με ελαιόλαδο & ψωμί ολικής', kcal:520, p:22, note:'μεγάλο μπολ', veg:true},
+    {n:'Μοσχάρι ισχνό με κριθαρότο λαχανικών', kcal:580, p:42, note:'150g κρέας', veg:false},
+    {n:'Ρεβίθια στιφάδο με ρύζι', kcal:530, p:20, note:'', veg:true},
+    {n:'Γαλοπούλα με γλυκοπατάτα & σαλάτα', kcal:540, p:44, note:'150g', veg:false},
+    {n:'Τόνος με ζυμαρικά ολικής & ντομάτα', kcal:560, p:38, note:'80g ζυμαρικά ξηρά', veg:false},
+    {n:'Ομελέτα λαχανικών με πατάτες φούρνου & σαλάτα', kcal:520, p:26, note:'', veg:true},
+    {n:'Μπιφτέκια κοτόπουλου φούρνου με μπουργκούλ', kcal:550, p:46, note:'', veg:false}
+  ],
+  dinner:[
+    {n:'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο', kcal:420, p:38, note:'', veg:false},
+    {n:'Σαλάτα με κοτόπουλο, αβοκάντο & ελαιόλαδο', kcal:450, p:36, note:'', veg:false},
+    {n:'Αυγά ομελέτα με τυρί & σαλάτα εποχής', kcal:400, p:26, note:'', veg:true},
+    {n:'Γιαούρτι υψηλής πρωτεΐνης με ξηρούς καρπούς & φρούτο', kcal:380, p:30, note:'', veg:true},
+    {n:'Τυρί cottage με λαχανικά & ψωμί ολικής', kcal:390, p:28, note:'', veg:true},
+    {n:'Φασολάκια λαδερά με φέτα & ψωμί', kcal:430, p:16, note:'', veg:true},
+    {n:'Γαρίδες σαλάτα με κινόα', kcal:410, p:34, note:'', veg:false},
+    {n:'Λαχανικά στον ατμό με τόφου & σόγια', kcal:400, p:28, note:'', veg:true}
+  ]
+};
+// meal share of daily calories
+const SHARE = {breakfast:0.25, snack1:0.10, lunch:0.35, snack2:0.10, dinner:0.20};
+
+function pickFood(cat, idx, dietPref){
+  let pool = FOODS[cat];
+  if(dietPref==='vegetarian') pool = pool.filter(f=>f.veg);
+  if(dietPref==='highprotein') pool = pool.slice().sort((a,b)=>b.p-a.p);
+  return pool[idx % pool.length];
+}
+
+// ingredients per meal (for the shopping list)
+const FOOD_ING = {
+  'Βρώμη με γάλα, μπανάνα & μέλι':['Βρώμη','Γάλα','Μπανάνα','Μέλι'],
+  'Ελληνικό γιαούρτι 2% με καρύδια & μέλι':['Γιαούρτι','Καρύδια','Μέλι'],
+  'Ομελέτα 3 αυγά με λαχανικά & τοστ ολικής':['Αυγά','Λαχανικά','Ψωμί ολικής'],
+  'Τοστ ολικής με αβγό & τυρί χαμηλών λιπαρών':['Ψωμί ολικής','Αυγά','Τυρί'],
+  'Smoothie: γάλα, βρώμη, φρούτα & πρωτεΐνη':['Γάλα','Βρώμη','Φρούτα','Πρωτεΐνη σκόνη'],
+  'Γιαούρτι με granola & μούρα':['Γιαούρτι','Granola','Μούρα'],
+  'Ψωμί ολικής με ταχίνι & φρούτο':['Ψωμί ολικής','Ταχίνι','Φρούτα'],
+  'Φρούτο εποχής & 15 αμύγδαλα':['Φρούτα','Αμύγδαλα'],
+  'Ελληνικό γιαούρτι με μέλι':['Γιαούρτι','Μέλι'],
+  'Μπάρα πρωτεΐνης':['Μπάρα πρωτεΐνης'],
+  'Φρυγανιές ολικής με τυρί cottage':['Φρυγανιές ολικής','Τυρί cottage'],
+  'Χούμους με λαχανικά (καρότο/αγγούρι)':['Χούμους','Καρότο','Αγγούρι'],
+  'Μήλο με φυστικοβούτυρο':['Μήλα','Φυστικοβούτυρο'],
+  'Ξηροί καρποί ανάμεικτοι':['Ξηροί καρποί'],
+  'Κοτόπουλο σχάρας με ρύζι & σαλάτα':['Κοτόπουλο','Ρύζι','Σαλάτα λαχανικά'],
+  'Σολομός ψητός με πατάτα & μπρόκολο':['Σολομός','Πατάτες','Μπρόκολο'],
+  'Φακές με ελαιόλαδο & ψωμί ολικής':['Φακές','Ελαιόλαδο','Ψωμί ολικής'],
+  'Μοσχάρι ισχνό με κριθαρότο λαχανικών':['Μοσχάρι','Κριθαράκι','Λαχανικά'],
+  'Ρεβίθια στιφάδο με ρύζι':['Ρεβίθια','Ρύζι','Ντομάτα'],
+  'Γαλοπούλα με γλυκοπατάτα & σαλάτα':['Γαλοπούλα','Γλυκοπατάτα','Σαλάτα λαχανικά'],
+  'Τόνος με ζυμαρικά ολικής & ντομάτα':['Τόνος (κονσέρβα)','Ζυμαρικά ολικής','Ντομάτα'],
+  'Ομελέτα λαχανικών με πατάτες φούρνου & σαλάτα':['Αυγά','Λαχανικά','Πατάτες','Σαλάτα λαχανικά'],
+  'Μπιφτέκια κοτόπουλου φούρνου με μπουργκούλ':['Κιμάς κοτόπουλου','Μπουργκούλ'],
+  'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο':['Ψάρι','Χόρτα','Ελαιόλαδο'],
+  'Σαλάτα με κοτόπουλο, αβοκάντο & ελαιόλαδο':['Κοτόπουλο','Αβοκάντο','Σαλάτα λαχανικά','Ελαιόλαδο'],
+  'Αυγά ομελέτα με τυρί & σαλάτα εποχής':['Αυγά','Τυρί','Σαλάτα λαχανικά'],
+  'Γιαούρτι υψηλής πρωτεΐνης με ξηρούς καρπούς & φρούτο':['Γιαούρτι','Ξηροί καρποί','Φρούτα'],
+  'Τυρί cottage με λαχανικά & ψωμί ολικής':['Τυρί cottage','Λαχανικά','Ψωμί ολικής'],
+  'Φασολάκια λαδερά με φέτα & ψωμί':['Φασολάκια','Φέτα','Ψωμί','Ελαιόλαδο'],
+  'Γαρίδες σαλάτα με κινόα':['Γαρίδες','Κινόα','Σαλάτα λαχανικά'],
+  'Λαχανικά στον ατμό με τόφου & σόγια':['Λαχανικά','Τόφου','Σάλτσα σόγιας']
+};
+const ING_CAT = {
+  '🥩 Κρέας / Ψάρι / Αυγά':['Κοτόπουλο','Σολομός','Μοσχάρι','Γαλοπούλα','Τόνος (κονσέρβα)','Κιμάς κοτόπουλου','Ψάρι','Γαρίδες','Αυγά','Τόφου'],
+  '🍲 Όσπρια':['Φακές','Ρεβίθια'],
+  '🧀 Γαλακτοκομικά':['Γάλα','Γιαούρτι','Τυρί','Τυρί cottage','Φέτα'],
+  '🍞 Δημητριακά / Άμυλα':['Βρώμη','Ψωμί ολικής','Ψωμί','Ρύζι','Πατάτες','Γλυκοπατάτα','Ζυμαρικά ολικής','Κριθαράκι','Μπουργκούλ','Κινόα','Φρυγανιές ολικής','Granola'],
+  '🥦 Λαχανικά':['Λαχανικά','Σαλάτα λαχανικά','Μπρόκολο','Ντομάτα','Καρότο','Αγγούρι','Χόρτα','Φασολάκια'],
+  '🍎 Φρούτα':['Φρούτα','Μπανάνα','Μούρα','Μήλα','Αβοκάντο'],
+  '🥜 Ξηροί καρποί / Λιπαρά':['Καρύδια','Αμύγδαλα','Ξηροί καρποί','Ελαιόλαδο','Ταχίνι','Φυστικοβούτυρο','Χούμους'],
+  '🧂 Άλλα / Βασικά':['Μέλι','Πρωτεΐνη σκόνη','Μπάρα πρωτεΐνης','Σάλτσα σόγιας']
+};
+
+// typical quantity per meal-occurrence (for shopping quantities)
+const ING_QTY = {
+  'Κοτόπουλο':{q:150,u:'g'}, 'Σολομός':{q:150,u:'g'}, 'Μοσχάρι':{q:150,u:'g'}, 'Γαλοπούλα':{q:150,u:'g'},
+  'Τόνος (κονσέρβα)':{q:1,u:'κονσ.'}, 'Κιμάς κοτόπουλου':{q:150,u:'g'}, 'Ψάρι':{q:200,u:'g'}, 'Γαρίδες':{q:150,u:'g'},
+  'Αυγά':{q:3,u:'τεμ.'}, 'Τόφου':{q:150,u:'g'},
+  'Φακές':{q:100,u:'g'}, 'Ρεβίθια':{q:100,u:'g'},
+  'Γάλα':{q:250,u:'ml'}, 'Γιαούρτι':{q:200,u:'g'}, 'Τυρί':{q:40,u:'g'}, 'Τυρί cottage':{q:150,u:'g'}, 'Φέτα':{q:60,u:'g'},
+  'Βρώμη':{q:60,u:'g'}, 'Ψωμί ολικής':{q:2,u:'φέτες'}, 'Ψωμί':{q:2,u:'φέτες'}, 'Ρύζι':{q:70,u:'g'},
+  'Πατάτες':{q:250,u:'g'}, 'Γλυκοπατάτα':{q:250,u:'g'}, 'Ζυμαρικά ολικής':{q:80,u:'g'}, 'Κριθαράκι':{q:80,u:'g'},
+  'Μπουργκούλ':{q:80,u:'g'}, 'Κινόα':{q:80,u:'g'}, 'Φρυγανιές ολικής':{q:4,u:'τεμ.'}, 'Granola':{q:40,u:'g'},
+  'Λαχανικά':{q:200,u:'g'}, 'Σαλάτα λαχανικά':{q:150,u:'g'}, 'Μπρόκολο':{q:200,u:'g'}, 'Ντομάτα':{q:150,u:'g'},
+  'Καρότο':{q:100,u:'g'}, 'Αγγούρι':{q:100,u:'g'}, 'Χόρτα':{q:200,u:'g'}, 'Φασολάκια':{q:250,u:'g'},
+  'Φρούτα':{q:1,u:'τεμ.'}, 'Μπανάνα':{q:1,u:'τεμ.'}, 'Μούρα':{q:80,u:'g'}, 'Μήλα':{q:1,u:'τεμ.'}, 'Αβοκάντο':{q:100,u:'g'},
+  'Καρύδια':{q:20,u:'g'}, 'Αμύγδαλα':{q:20,u:'g'}, 'Ξηροί καρποί':{q:30,u:'g'}, 'Ελαιόλαδο':{q:15,u:'ml'},
+  'Ταχίνι':{q:15,u:'g'}, 'Φυστικοβούτυρο':{q:15,u:'g'}, 'Χούμους':{q:60,u:'g'},
+  'Μέλι':{q:15,u:'g'}, 'Πρωτεΐνη σκόνη':{q:30,u:'g'}, 'Μπάρα πρωτεΐνης':{q:1,u:'τεμ.'}, 'Σάλτσα σόγιας':{q:15,u:'ml'}
+};
+function fmtQty(ing, occ, factor){
+  const q=ING_QTY[ing];
+  if(!q) return '×'+occ;
+  let total=q.q*occ*factor;
+  if(q.u==='g'||q.u==='ml'){
+    total=Math.round(total/10)*10;
+    if(total>=1000) return (total/1000).toFixed(1).replace('.0','')+(q.u==='g'?' kg':' L');
+    return total+' '+q.u;
+  }
+  return Math.max(1,Math.round(total))+' '+q.u;
+}
+
+function weekMeals(dietPref){
+  const out=[];
+  for(let d=0; d<7; d++){
+    out.push([
+      {key:'breakfast', label:'Πρωινό', f:pickFood('breakfast',d,dietPref), share:SHARE.breakfast},
+      {key:'snack1', label:'Δεκατιανό', f:pickFood('snack',d,dietPref), share:SHARE.snack1},
+      {key:'lunch', label:'Μεσημεριανό', f:pickFood('lunch',d,dietPref), share:SHARE.lunch},
+      {key:'snack2', label:'Απογευματινό', f:pickFood('snack',d+3,dietPref), share:SHARE.snack2},
+      {key:'dinner', label:'Βραδινό', f:pickFood('dinner',d,dietPref), share:SHARE.dinner}
+    ]);
+  }
+  return out;
+}
+
+function buildShopping(c, dietPref, people){
+  people = people||1;
+  const week=weekMeals(dietPref);
+  const counts={};
+  week.forEach(day=>day.forEach(m=>{
+    (FOOD_ING[m.f.n]||[]).forEach(i=>{ counts[i]=(counts[i]||0)+1; });
+  }));
+  const factor = (c && c.target ? Math.min(1.5, Math.max(0.7, c.target/2000)) : 1) * people;
+  const known=new Set();
+  const row=i=>`<label class="meal" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+    <input type="checkbox" style="width:auto;flex:0 0 auto"> <span class="mn">${i}</span>
+    <span class="mm" style="margin-left:auto;text-align:right"><b>${fmtQty(i,counts[i],factor)}</b><br><span style="font-size:.72rem">${counts[i]} γεύμ./εβδ.</span></span></label>`;
+  const pTxt = people===1?'<b>1 άτομο</b>':`<b>${people} άτομα</b>`;
+  let html=`<div class="note">🛒 Αυτόματη λίστα (εκτίμηση) για <b>7 ημέρες</b> · ${pTxt} · ~${c?c.target:2000} kcal/άτομο. Τσέκαρε ό,τι αγοράζεις. Άλλαξε τον αριθμό ατόμων από πάνω για να πολλαπλασιαστούν οι ποσότητες.</div>`;
+  for(const [cat,items] of Object.entries(ING_CAT)){
+    const present=items.filter(i=>counts[i]);
+    present.forEach(i=>known.add(i));
+    if(!present.length) continue;
+    html+=`<div class="day"><h3>${cat}</h3>`+present.map(row).join('')+'</div>';
+  }
+  const other=Object.keys(counts).filter(i=>!known.has(i));
+  if(other.length) html+='<div class="day"><h3>📦 Άλλα</h3>'+other.map(row).join('')+'</div>';
+  return html;
+}
+
+function buildDiet(c, dietPref){
+  const days=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
+  const week=weekMeals(dietPref);
+  let html='';
+  for(let d=0; d<7; d++){
+    const meals=week[d];
+    let rows='';
+    meals.forEach(m=>{
+      const targetKcal = c.target*m.share;
+      const mult = targetKcal / m.f.kcal;
+      const portion = mult>=1.25?'μεγαλύτερη μερίδα':(mult<=0.8?'μικρή μερίδα':'κανονική μερίδα');
+      const kcal = round(targetKcal);
+      rows += `<div class="meal">
+        <div class="mt">${m.label} · ~${kcal} kcal</div>
+        <div class="mn">${m.f.n}</div>
+        <div class="mm">${portion}${m.f.note?' · '+m.f.note:''} · ~${round(m.f.p*mult)}g πρωτεΐνη</div>
+      </div>`;
+    });
+    html += `<div class="day">
+      <h3>${days[d]} <span class="kcal">~${c.target} kcal</span></h3>
+      ${rows}
+    </div>`;
+  }
+  return html;
+}
+
+/* ================= WORKOUT DATABASE ================= */
+const EX = {
+  gym:{
+    chest:[['Πιέσεις στήθους με μπάρα (Bench Press)','Στήθος'],['Πιέσεις με αλτήρες σε κλίση','Άνω στήθος'],['Πεταλούδα / Cable fly','Στήθος']],
+    back:[['Έλξεις τροχαλίας (Lat pulldown)','Πλάτη'],['Κωπηλατική με μπάρα','Πλάτη'],['Έλξεις καθιστός τροχαλία','Πλάτη/Μέση']],
+    shoulders:[['Πιέσεις ώμων με αλτήρες','Ώμοι'],['Πλάγιες άρσεις','Πλάγιοι δελτοειδείς'],['Face pulls','Οπ. δελτοειδείς']],
+    quads:[['Καθίσματα με μπάρα (Squat)','Τετρακέφαλοι/Γλουτοί'],['Πιέσεις ποδιών (Leg press)','Πόδια'],['Προβολές με αλτήρες','Πόδια/Γλουτοί']],
+    hams:[['Νεκρή άρση (Deadlift)','Οπ. μηριαίοι/Μέση'],['Ρουμανική άρση','Οπ. μηριαίοι'],['Κάμψεις ποδιών μηχανή','Δικέφαλοι μηρού']],
+    biceps:[['Κάμψεις δικεφάλων με μπάρα','Δικέφαλοι'],['Σφυριά με αλτήρες','Δικέφαλοι/Βραχιόνιοι']],
+    triceps:[['Εκτάσεις τρικεφάλων τροχαλία','Τρικέφαλοι'],['Πιέσεις κοντό λαβή','Τρικέφαλοι']],
+    core:[['Πλανκ (Plank)','Κορμός'],['Τροχαλία κοιλιακών','Κοιλιακοί'],['Ανυψώσεις ποδιών','Κάτω κοιλιακοί']]
+  },
+  home:{
+    chest:[['Push-ups (κάμψεις)','Στήθος'],['Κάμψεις με κλίση σε τραπέζι','Άνω/κάτω στήθος'],['Diamond push-ups','Στήθος/Τρικέφαλοι']],
+    back:[['Έλξεις σε μπάρα (Pull-ups) ή πετσέτα σε πόρτα','Πλάτη'],['Κωπηλατική με λάστιχο/μπουκάλια','Πλάτη'],['Superman','Ραχιαίοι']],
+    shoulders:[['Pike push-ups','Ώμοι'],['Πλάγιες άρσεις με μπουκάλια/λάστιχο','Ώμοι'],['Άρσεις εμπρός','Ώμοι']],
+    quads:[['Καθίσματα σώματος (Squats)','Πόδια/Γλουτοί'],['Bulgarian split squat','Πόδια/Γλουτοί'],['Άλματα καθίσματος','Πόδια']],
+    hams:[['Γέφυρα γλουτών','Γλουτοί/Οπ. μηριαίοι'],['Προβολές (Lunges)','Πόδια/Γλουτοί'],['Single-leg deadlift','Οπ. μηριαίοι/Ισορροπία']],
+    biceps:[['Κάμψεις με λάστιχο/μπουκάλια','Δικέφαλοι']],
+    triceps:[['Dips σε καρέκλα','Τρικέφαλοι'],['Diamond push-ups','Τρικέφαλοι']],
+    core:[['Πλανκ (Plank)','Κορμός'],['Κοιλιακοί crunches','Κοιλιακοί'],['Ανυψώσεις ποδιών','Κάτω κοιλιακοί'],['Mountain climbers','Κορμός/Καρδιο']]
+  }
+};
+
+function setsReps(goal, exp){
+  // returns {sets, reps, rest}
+  const base = {
+    lose:{reps:'12-15', rest:'45-60″'},
+    maintain:{reps:'8-12', rest:'60-90″'},
+    gain:{reps:'8-12', rest:'90-120″'}
+  }[goal];
+  const sets = exp==='beg'?3:(exp==='int'?3:4);
+  return {sets, reps:base.reps, rest:base.rest};
+}
+
+function dayPlan(kind, place){
+  const db=EX[place];
+  const pick=(cat,n=1)=>db[cat].slice(0,n).map(x=>({name:x[0],musc:x[1]}));
+  switch(kind){
+    case 'FB': return {title:'Full Body A (όλο το σώμα)',
+      ex:[...pick('quads'),...pick('chest'),...pick('back'),...pick('shoulders'),...pick('hams'),...pick('core')]};
+    case 'FBb': return {title:'Full Body B (όλο το σώμα)',
+      ex:[...db.quads.slice(1,2).map(x=>({name:x[0],musc:x[1]})),
+          ...db.chest.slice(1,2).map(x=>({name:x[0],musc:x[1]})),
+          ...db.back.slice(1,2).map(x=>({name:x[0],musc:x[1]})),
+          ...pick('biceps'),...pick('triceps'),...pick('core')]};
+    case 'FBc': return {title:'Full Body C (όλο το σώμα)',
+      ex:[...db.hams.slice(0,1).map(x=>({name:x[0],musc:x[1]})),
+          ...db.shoulders.slice(0,1).map(x=>({name:x[0],musc:x[1]})),
+          ...db.back.slice(2,3).map(x=>({name:x[0],musc:x[1]})),
+          ...db.chest.slice(2,3).map(x=>({name:x[0],musc:x[1]})),
+          ...pick('quads'),...pick('core')]};
+    case 'Upper': return {title:'άνω κορμός',
+      ex:[...pick('chest'),...pick('back'),...pick('shoulders'),...pick('biceps'),...pick('triceps'),...pick('core')]};
+    case 'Lower': return {title:'κάτω κορμός',
+      ex:[...pick('quads'),...pick('hams'),...db.quads.slice(2,3).map(x=>({name:x[0],musc:x[1]})),...pick('core')]};
+    case 'Push': return {title:'ώθηση (στήθος/ώμοι/τρικέφαλοι)',
+      ex:[...pick('chest',2),...pick('shoulders',1),...pick('triceps',1),...pick('core')]};
+    case 'Pull': return {title:'έλξη (πλάτη/δικέφαλοι)',
+      ex:[...pick('back',2),...pick('biceps',1),...db.shoulders.slice(2,3).map(x=>({name:x[0],musc:x[1]})),...pick('core')]};
+    case 'Legs': return {title:'πόδια',
+      ex:[...pick('quads',1),...pick('hams',2),...pick('core')]};
+  }
+}
+
+function buildWorkout(days, place, goal, exp){
+  const splits={
+    3:['FB','FBb','FBc'],
+    4:['Upper','Lower','Upper','Lower'],
+    5:['Push','Pull','Legs','Upper','Lower'],
+    6:['Push','Pull','Legs','Push','Pull','Legs']
+  };
+  const plan=splits[days];
+  const sr=setsReps(goal,exp);
+  const cardio = goal==='lose'?'20-30′ καρδιο (γρήγορο περπάτημα/ποδήλατο) μετά την προπόνηση ή σε ημέρα ξεκούρασης.':
+                 goal==='gain'?'Προαιρετικό ελαφρύ καρδιο 10-15′ για προθέρμανση.':
+                 '15-20′ καρδιο 2-3 φορές/εβδομάδα για την υγεία της καρδιάς.';
+  let html='';
+  plan.forEach((k,i)=>{
+    const dp=dayPlan(k,place);
+    let rows='';
+    dp.ex.forEach(e=>{
+      rows+=`<div class="ex"><div><div class="name">${e.name}</div><div class="musc">${e.musc}</div></div>
+        <div class="sr">${sr.sets}×${sr.reps}<br><span style="color:var(--muted);font-weight:400">ξεκ. ${sr.rest}</span></div></div>`;
+    });
+    html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${dp.title}</h3>
+      <div class="wk"><span>🎯 ${sr.sets} σετ × ${sr.reps} επαναλήψεις</span><span>⏱️ ξεκούραση ${sr.rest}</span></div>
+      <div style="margin-top:8px">${rows}</div></div>`;
+  });
+  html+=`<div class="note">🏃 <b>Καρδιαγγειακή:</b> ${cardio}</div>`;
+  html+=`<div class="note">🔥 <b>Προθέρμανση</b> 5-10′ πριν & <b>διατάσεις</b> 5′ μετά. Κάθε 2-3 εβδομάδες αύξησε ελαφρώς βάρος ή επαναλήψεις (προοδευτική υπερφόρτωση).</div>`;
+  return {html, plan};
+}
+
+/* ================= WEEKLY PLAN ================= */
+function buildWeek(days, plan){
+  const dn=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
+  // distribute training days across the week
+  const schedules={
+    3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5]
+  };
+  const trainDays=schedules[days];
+  const titleFor=k=>dayPlan(k,'gym').title;
+  let rows='';
+  for(let i=0;i<7;i++){
+    const ti=trainDays.indexOf(i);
+    const w = ti>=0 ? `💪 Προπόνηση ${ti+1}: ${titleFor(plan[ti])}` : '🧘 Ξεκούραση / ενεργή αποκατάσταση (περπάτημα)';
+    rows+=`<tr><td><b>${dn[i]}</b></td><td>${w}</td><td>🍽️ Πλάνο διατροφής ημέρας ${i+1}</td></tr>`;
+  }
+  return `<table><thead><tr><th>Ημέρα</th><th>Γυμναστική</th><th>Διατροφή</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ================= TIPS ================= */
+function buildTips(c){
+  const goalTip = {
+    lose:'Είσαι σε <b>έλλειμμα θερμίδων</b>. Στόχευσε απώλεια ~0,5-0,75 kg/εβδομάδα. Ζυγίσου 1×/εβδομάδα, ίδια μέρα & ώρα.',
+    maintain:'Στόχος <b>συντήρησης</b>. Κράτα σταθερό βάρος ±1 kg και επικεντρώσου στην ποιότητα φαγητού & στη δύναμη.',
+    gain:'Είσαι σε <b>πλεόνασμα θερμίδων</b> για μυϊκή ανάπτυξη. Στόχευσε αύξηση ~0,25-0,5 kg/εβδομάδα ώστε να είναι κυρίως μυς.'
+  }[state.goal];
+  return `<ul class="tips">
+    <li>${goalTip}</li>
+    <li><b>Πρωτεΐνη σε κάθε γεύμα</b> (~${round(c.protG/4)}-${round(c.protG/3)}g) βοηθά στον κορεσμό και στη διατήρηση μυών.</li>
+    <li><b>Νερό:</b> στόχος ~${c.water.toFixed(1)} λίτρα/ημέρα. Ένα ποτήρι πριν από κάθε γεύμα βοηθά.</li>
+    <li><b>Ύπνος 7-9 ώρες:</b> κρίσιμος για αποκατάσταση, ορμόνες πείνας και απόδοση.</li>
+    <li><b>Λαχανικά</b> στο μισό πιάτο σε μεσημεριανό & βραδινό — φυτικές ίνες, όγκος, λίγες θερμίδες.</li>
+    <li><b>Ελαιόλαδο</b> ως κύρια πηγή λίπους (μεσογειακό πρότυπο), με μέτρο (1 κ.σ. ≈ 120 kcal).</li>
+    <li><b>Περιόρισε</b> ζάχαρη, αναψυκτικά, τηγανητά & υπερεπεξεργασμένα. Απόλαυσε ελεύθερα με μέτρο 1×/εβδ.</li>
+    <li><b>Προοδευτική υπερφόρτωση:</b> κάθε εβδομάδα προσπάθησε λίγο περισσότερες επαναλήψεις ή βάρος.</li>
+    <li><b>Συνέπεια > τελειότητα:</b> ένα πρόγραμμα που τηρείς 80% του χρόνου νικά το «τέλειο» που εγκαταλείπεις.</li>
+    <li><b>📏 Μεζούρα κάθε 2-4 εβδομάδες:</b> η περίμετρος μέσης πέφτει συχνά και όταν η ζυγαριά «κολλάει» — είναι καλύτερος δείκτης προόδου από το βάρος μόνο. Μέτρα πρωί, νηστικός/-ή.</li>
+  </ul>
+  <div class="note">📌 Επανυπολόγισε τις θερμίδες & ξαναπάρε μετρήσεις κάθε 4-6 εβδομάδες ή ανά ~4-5 kg αλλαγής βάρους, γιατί το TDEE και η άλιπη μάζα μεταβάλλονται.</div>`;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const c=calc();
+  if(!(c.age>0 && c.h>0 && c.w>0)){ alert('Συμπλήρωσε ηλικία, ύψος και βάρος.'); return; }
+  const dietPref=$('#diet').value, days=+$('#days').value;
+  const name=$('#name').value.trim();
+
+  $('#greet').textContent = name?('· Γεια σου, '+name+'!'):'';
+  // stats
+  $('#sBmi').textContent=c.bmi.toFixed(1);
+  const bc=bmiCat(c.bmi);
+  $('#sBmiCat').innerHTML=`<span class="badge ${bc.c}">${bc.t}</span>`;
+  $('#sBmr').innerHTML=c.bmr+' <span class="u">kcal</span>';
+  $('#sTdee').innerHTML=c.tdee+' <span class="u">kcal</span>';
+  $('#sTarget').innerHTML=c.target+' <span class="u">kcal</span>';
+  $('#sTargetL').textContent = state.goal==='lose'?'Θερμίδες στόχου (έλλειμμα)':state.goal==='gain'?'Θερμίδες στόχου (πλεόνασμα)':'Θερμίδες στόχου';
+  $('#sWater').innerHTML=c.water.toFixed(1)+' <span class="u">L</span>';
+  $('#sIdeal').innerHTML=c.idLo+'–'+c.idHi+' <span class="u">kg</span>';
+  // extra stats from tape measurements (body fat, lean mass, waist/height)
+  let ex='';
+  if(!isNaN(c.bfUsed)){
+    const bcf=bfCat(c.bfUsed,c.sex);
+    const srcTxt=c.bfSource==='navy'?' <span class="u">(μεζούρα)</span>':'';
+    ex+=`<div class="stat"><div class="v">${c.bfUsed.toFixed(1)}%</div><div class="l">Λίπος σώματος <span class="badge ${bcf.c}">${bcf.t}</span>${srcTxt}</div></div>`;
+    ex+=`<div class="stat"><div class="v">${c.lean} <span class="u">kg</span></div><div class="l">Άλιπη (μυϊκή) μάζα</div></div>`;
+  }
+  if(c.whtr){
+    const wcf=whtrCat(c.whtr);
+    ex+=`<div class="stat"><div class="v">${c.whtr.toFixed(2)}</div><div class="l">Μέση ÷ Ύψος <span class="badge ${wcf.c}">${wcf.t}</span></div></div>`;
+  }
+  if(c.m.waist>0){
+    ex+=`<div class="stat"><div class="v">${c.m.waist} <span class="u">cm</span></div><div class="l">Περίμετρος μέσης</div></div>`;
+  }
+  $('#extraStats').innerHTML=ex;
+  $('#extraStats').style.display = ex?'grid':'none';
+  // macros
+  $('#mP').textContent=c.protG+'g'; $('#mC').textContent=c.carbG+'g'; $('#mF').textContent=c.fatG+'g';
+  const pKcal=c.protG*4,cKcal=c.carbG*4,fKcal=c.fatG*9,tot=pKcal+cKcal+fKcal||1;
+  $('#macrobar').querySelector('.mp').style.width=(pKcal/tot*100)+'%';
+  $('#macrobar').querySelector('.mc').style.width=(cKcal/tot*100)+'%';
+  $('#macrobar').querySelector('.mf').style.width=(fKcal/tot*100)+'%';
+  // target note
+  const pct=Math.round(Math.abs(c.adj)*100);
+  $('#targetNote').innerHTML = state.goal==='lose'
+    ? `Έλλειμμα ${pct}% κάτω από τη συντήρηση (~${c.tdee-c.target} kcal/ημέρα). Αναμενόμενη απώλεια ~${((c.tdee-c.target)*7/7700).toFixed(2)} kg/εβδομάδα.`
+    : state.goal==='gain'
+    ? `Πλεόνασμα ${pct}% πάνω από τη συντήρηση (~${c.target-c.tdee} kcal/ημέρα) για μυϊκή ανάπτυξη με ελάχιστο λίπος.`
+    : `Θερμίδες ίσες με το TDEE σου για διατήρηση του βάρους.`;
+  if(c.lean) $('#targetNote').innerHTML += ` · Άλιπη μάζα ~${c.lean} kg (Katch-McArdle).`;
+  // timeline to desired weight
+  if(c.goalKg && c.targetWeight!=null && c.weeks){
+    const verb = state.goal==='lose'?'Θα χάσεις':'Θα βάλεις';
+    const months=(c.weeks/4.345);
+    const monTxt = months>=1?` (~${months.toFixed(1)} μήνες)`:'';
+    $('#targetNote').innerHTML += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
+      🎯 <b>${verb} ${c.goalKg} kg</b> → νέο βάρος <b>~${c.targetWeight.toFixed(1)} kg</b> σε
+      <b>~${Math.round(c.weeks)} εβδομάδες</b>${monTxt}, γύρω στις <b>${c.goalDate}</b>
+      (ρυθμός ~${c.weeklyChange.toFixed(2)} kg/εβδομάδα). Όλα τα προγράμματα παρακάτω είναι φτιαγμένα γι' αυτόν τον στόχο.</div>`;
+    if(state.goal==='lose' && c.targetWeight < c.idLo){
+      $('#targetNote').innerHTML += `<div style="margin-top:6px;color:var(--warn)">⚠️ Ο στόχος αυτός είναι κάτω από το υγιές εύρος βάρους (${c.idLo}–${c.idHi} kg). Σκέψου έναν πιο ρεαλιστικό στόχο ή συμβουλέψου διαιτολόγο.</div>`;
+    }
+  }
+
+  // diet
+  const dietNames={mediterranean:'Μεσογειακή',omnivore:'κλασική',highprotein:'υψηλής πρωτεΐνης',vegetarian:'χορτοφαγική'};
+  $('#dietNote').innerHTML=`Πρότυπο: <b>${dietNames[dietPref]}</b> διατροφή · ~${c.target} kcal/ημέρα · 5 γεύματα. Οι μερίδες προσαρμόζονται στον στόχο σου. Εναλλαγή γευμάτων για 7 ημέρες.`
+    + (c.lean!=null?` <br>🎯 <b>Εξατομικευμένο:</b> η πρωτεΐνη (${c.protG}g) & οι θερμίδες υπολογίστηκαν με βάση την <b>άλιπη μάζα σου (~${c.lean} kg)</b> από τις μετρήσεις — πιο ακριβές πρόγραμμα.`:'');
+  $('#dietOut').innerHTML=buildDiet(c,dietPref);
+  // shopping list
+  $('#shopOut').innerHTML=buildShopping(c,dietPref,shopPeople);
+
+  // workout
+  const wo=buildWorkout(days,state.place,state.goal,state.exp);
+  const placeName=state.place==='gym'?'γυμναστήριο':'σπίτι (χωρίς εξοπλισμό/με λάστιχα)';
+  const splitName={3:'Full Body ×3',4:'Upper/Lower ×2',5:'Push/Pull/Legs + Upper/Lower',6:'Push/Pull/Legs ×2'}[days];
+  $('#woNote').innerHTML=`Χώρος: <b>${placeName}</b> · ${days} ημέρες/εβδομάδα · Διάσπαση: <b>${splitName}</b>. Κάθε μυϊκή ομάδα ~2×/εβδομάδα για βέλτιστη ανάπτυξη.`;
+  $('#woOut').innerHTML=wo.html;
+
+  // week
+  $('#weekOut').innerHTML=buildWeek(days,wo.plan);
+  // tips
+  $('#tipsOut').innerHTML=buildTips(c);
+
+  // goal weight line on the progress chart
+  lastTargetWeight = (c.targetWeight!=null) ? c.targetWeight : null;
+  persistCurrentInputs();   // auto-save this member's inputs
+  renderProgress();
+  renderFamily();
+
+  $('#formCard').style.display='none';
+  $('#results').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================= TABS ================= */
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  $$('.tabs button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  $$('.tabpane').forEach(p=>p.classList.remove('show'));
+  $('#tab-'+b.dataset.tab).classList.add('show');
+}));
+
+/* ================= SAVE / LOAD ================= */
+function collectInputs(){
+  return {
+    name:$('#name').value, age:$('#age').value, height:$('#height').value,
+    weight:$('#weight').value, bodyfat:$('#bodyfat').value, diet:$('#diet').value,
+    days:$('#days').value, goalWeight:$('#goalWeight').value,
+    mNeck:$('#mNeck').value, mWaist:$('#mWaist').value, mHip:$('#mHip').value,
+    mChest:$('#mChest').value, mArm:$('#mArm').value, mThigh:$('#mThigh').value, ...state
+  };
+}
+function applyInputs(d){
+  $('#name').value=d.name||''; $('#age').value=d.age||''; $('#height').value=d.height||'';
+  $('#weight').value=d.weight||''; $('#bodyfat').value=d.bodyfat||''; $('#diet').value=d.diet||'mediterranean';
+  $('#days').value=d.days||'3';
+  $('#goalWeight').value=d.goalWeight||'';
+  $('#mNeck').value=d.mNeck||''; $('#mWaist').value=d.mWaist||''; $('#mHip').value=d.mHip||'';
+  $('#mChest').value=d.mChest||''; $('#mArm').value=d.mArm||''; $('#mThigh').value=d.mThigh||'';
+  const setSeg=(id,key,val)=>{$$('#'+id+' button').forEach(b=>{
+    const bv = id==='actSeg'?parseFloat(b.dataset.v):b.dataset.v;
+    const on = bv==val; b.classList.toggle('active',on); if(on) state[key]=bv;
+  });};
+  setSeg('sexSeg','sex',d.sex); setSeg('actSeg','act',d.act); setSeg('goalSeg','goal',d.goal);
+  setSeg('rateSeg','rate',d.rate); setSeg('placeSeg','place',d.place); setSeg('expSeg','exp',d.exp);
+  updateGoalWeightRow();
+}
+$('#saveBtn').addEventListener('click',()=>{
+  persistCurrentInputs();
+  $('#saveBtn').textContent='✓ Αποθηκεύτηκε';
+  setTimeout(()=>$('#saveBtn').textContent='💾 Αποθήκευση',1500);
+});
+$('#loadBtn').addEventListener('click',()=>{ applyProfile(); render(); });
+/* profile controls */
+$('#profileSel').addEventListener('change',e=>switchProfile(e.target.value));
+$('#profNew').addEventListener('click',()=>{
+  const s=loadStore();
+  const name=prompt('Όνομα νέου προφίλ / μέλους:', 'Μέλος '+(Object.keys(s.profiles).length+1));
+  if(!name) return;
+  const id=uid();
+  s.profiles[id]={name, inputs:{...DEFAULT_INPUTS, name}, history:[]};
+  s.current=id; saveStore(); refreshProfileSel(); applyProfile(); lastTargetWeight=null;
+  $('#results').classList.remove('show'); $('#formCard').style.display='block';
+  renderProgress(); window.scrollTo({top:0,behavior:'smooth'});
+});
+$('#profRen').addEventListener('click',()=>{
+  const p=curProfile(); const name=prompt('Μετονομασία προφίλ:', p.name);
+  if(!name) return; p.name=name; saveStore(); refreshProfileSel();
+});
+$('#profDel').addEventListener('click',()=>{
+  const s=loadStore();
+  if(Object.keys(s.profiles).length<=1){ alert('Πρέπει να υπάρχει τουλάχιστον ένα προφίλ.'); return; }
+  if(!confirm('Διαγραφή του προφίλ «'+curProfile().name+'» μαζί με το ιστορικό του;')) return;
+  delete s.profiles[s.current]; s.current=Object.keys(s.profiles)[0]; saveStore();
+  refreshProfileSel(); applyProfile(); lastTargetWeight=null;
+  if($('#results').classList.contains('show')) render(); else renderProgress();
+});
+$('#editBtn').addEventListener('click',()=>{
+  $('#results').classList.remove('show');
+  $('#formCard').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+$('#resetBtn').addEventListener('click',()=>{
+  if(confirm('Καθαρισμός φόρμας;')){ location.reload(); }
+});
+$('#printBtn').addEventListener('click',()=>window.print());
+$('#genBtn').addEventListener('click',render);
+
+/* ================= PROGRESS / HISTORY ================= */
+const METRICS = {
+  weight:{label:'Βάρος', unit:'kg', color:'#2d9cdb'},
+  waist :{label:'Μέση',  unit:'cm', color:'#f2a03d'},
+  bf    :{label:'Λίπος %',unit:'%', color:'#e5556e'},
+  hip   :{label:'Γοφοί', unit:'cm', color:'#22c1a4'},
+  chest :{label:'Στήθος',unit:'cm', color:'#9b59b6'},
+  arm   :{label:'Μπράτσο',unit:'cm',color:'#3ecf8e'},
+  thigh :{label:'Μηρός', unit:'cm', color:'#e67e22'}
+};
+let progMetric='weight', lastTargetWeight=null, shopPeople=1, qrEcl='M', qrSize='medium';
+/* ===== PROFILES + STORAGE (multi-profile: family members) ===== */
+let memStore=null;
+const DEFAULT_INPUTS={name:'',age:'30',height:'175',weight:'80',bodyfat:'',diet:'mediterranean',days:'3',goalWeight:'',mNeck:'',mWaist:'',mHip:'',mChest:'',mArm:'',mThigh:'',sex:'male',act:1.375,goal:'lose',rate:'normal',place:'gym',exp:'beg'};
+function uid(){ return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function loadStore(){
+  if(memStore) return memStore;
+  let s=null;
+  try{ s=JSON.parse(lsGet('fitplan_store')); }catch(e){}
+  if(!s || !s.profiles || !Object.keys(s.profiles).length){
+    // migrate legacy single profile, if any
+    let inputs=null,hist=[];
+    try{ inputs=JSON.parse(lsGet('fitplan')); }catch(e){}
+    try{ hist=JSON.parse(lsGet('fitplan_history'))||[]; }catch(e){}
+    const id=uid();
+    s={current:id, profiles:{}};
+    s.profiles[id]={name:(inputs&&inputs.name)?inputs.name:'Προφίλ 1', inputs:inputs||{...DEFAULT_INPUTS}, history:Array.isArray(hist)?hist:[]};
+  }
+  if(!s.profiles[s.current]) s.current=Object.keys(s.profiles)[0];
+  memStore=s; return s;
+}
+function saveStore(){ if(memStore) lsSet('fitplan_store', JSON.stringify(memStore)); }
+function curProfile(){ const s=loadStore(); return s.profiles[s.current]; }
+function loadHistory(){ return curProfile().history || (curProfile().history=[]); }
+function saveHistory(a){ curProfile().history=a; saveStore(); }
+function refreshProfileSel(){
+  const s=loadStore();
+  const sel=$('#profileSel'); if(!sel) return;
+  sel.innerHTML=Object.entries(s.profiles).map(([id,p])=>
+    `<option value="${id}" ${id===s.current?'selected':''}>${(p.name||'Προφίλ').replace(/</g,'&lt;')}</option>`).join('');
+}
+function applyProfile(){
+  applyInputs({...DEFAULT_INPUTS, ...(curProfile().inputs||{})});
+  shopPeople = curProfile().people || 1;
+  const sp=$('#shopPeople'); if(sp) sp.value=String(shopPeople);
+}
+function persistCurrentInputs(){
+  const p=curProfile(); p.inputs=collectInputs();
+  if(p.inputs.name) p.name=p.inputs.name;
+  saveStore(); refreshProfileSel();
+}
+function switchProfile(id){
+  const s=loadStore(); if(!s.profiles[id]) return;
+  s.current=id; saveStore();
+  applyProfile(); refreshProfileSel(); lastTargetWeight=null;
+  if($('#results').classList.contains('show')) render(); else renderProgress();
+}
+function snapshotFromInputs(){
+  const sex=state.sex, h=+$('#height').value;
+  const neck=parseFloat($('#mNeck').value), waist=parseFloat($('#mWaist').value), hip=parseFloat($('#mHip').value);
+  const bfManual=parseFloat($('#bodyfat').value);
+  const navy=navyBodyFat(sex,h,neck,waist,hip);
+  const bf=(!isNaN(bfManual)&&bfManual>0)?bfManual:(navy!=null?+navy.toFixed(1):null);
+  const num=v=>{const x=parseFloat(v);return isNaN(x)?null:x;};
+  return {weight:num($('#weight').value), waist:num($('#mWaist').value), bf,
+          hip:num($('#mHip').value), chest:num($('#mChest').value),
+          arm:num($('#mArm').value), thigh:num($('#mThigh').value)};
+}
+function recordMeasurement(){
+  const date=$('#recDate').value || new Date().toISOString().slice(0,10);
+  const snap=snapshotFromInputs();
+  if(snap.weight==null && snap.waist==null && snap.bf==null){
+    alert('Συμπλήρωσε τουλάχιστον βάρος ή μέτρηση μέσης στη φόρμα πρώτα.'); return;
+  }
+  let hist=loadHistory();
+  hist=hist.filter(e=>e.date!==date);        // replace same-day entry
+  hist.push({date, ...snap});
+  hist.sort((a,b)=>a.date.localeCompare(b.date));
+  saveHistory(hist);
+  renderProgress();
+  const b=$('#recBtn'); b.textContent='✓ Καταγράφηκε'; setTimeout(()=>b.textContent='➕ Καταγραφή μέτρησης',1500);
+}
+function deleteEntry(date){
+  if(!confirm('Διαγραφή της μέτρησης '+fmtDate(date)+';')) return;
+  saveHistory(loadHistory().filter(e=>e.date!==date));
+  renderProgress();
+}
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+function lineChart(hist, metric){
+  const meta=METRICS[metric];
+  const pts=hist.filter(e=>e[metric]!=null).map(e=>({date:e.date, v:+e[metric]}));
+  if(pts.length<2){
+    return `<div class="note">Χρειάζονται τουλάχιστον <b>2 καταγραφές</b> με τιμή «${meta.label}» για να σχεδιαστεί γράφημα. Έχεις ${pts.length}.</div>`;
+  }
+  const W=620,H=260,pad={l:44,r:16,t:16,b:34};
+  const xs=pts.map((p,i)=>i), ys=pts.map(p=>p.v);
+  const goal = (metric==='weight' && typeof lastTargetWeight==='number' && lastTargetWeight>0) ? lastTargetWeight : null;
+  let mn=Math.min(...ys), mx=Math.max(...ys);
+  if(goal!=null){ mn=Math.min(mn,goal); mx=Math.max(mx,goal); }
+  if(mn===mx){ mn-=1; mx+=1; }
+  const rng=mx-mn, padY=rng*0.15; mn-=padY; mx+=padY;
+  const X=i=>pad.l + (i/(pts.length-1))*(W-pad.l-pad.r);
+  const Y=v=>H-pad.b - ((v-mn)/(mx-mn))*(H-pad.t-pad.b);
+  const line=pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+  const area=`${pad.l},${H-pad.b} ${line} ${X(pts.length-1)},${H-pad.b}`;
+  // grid + y labels (3 lines)
+  let grid='';
+  for(let g=0; g<=3; g++){
+    const val=mn+(mx-mn)*g/3, y=Y(val);
+    grid+=`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W-pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
+    grid+=`<text x="${pad.l-6}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${val.toFixed(meta.unit==='%'?1:0)}</text>`;
+  }
+  // x labels: first, middle, last
+  const idxs=[...new Set([0, Math.floor((pts.length-1)/2), pts.length-1])];
+  let xlab='';
+  idxs.forEach(i=>{ xlab+=`<text x="${X(i).toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="10" fill="var(--muted)">${fmtDate(pts[i].date)}</text>`; });
+  // points + value labels for first & last
+  let dots='';
+  pts.forEach((p,i)=>{ dots+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.5" fill="${meta.color}"/>`; });
+  const first=pts[0], last=pts[pts.length-1];
+  const diff=(last.v-first.v);
+  const diffTxt=(diff>0?'+':'')+diff.toFixed(1)+' '+meta.unit;
+  const diffColor = metric==='bf'||metric==='waist' ? (diff<=0?'var(--good)':'var(--bad)') : 'var(--muted)';
+  // goal line (dashed) + label
+  let goalSvg='', goalTxt='';
+  if(goal!=null){
+    const gy=Y(goal).toFixed(1);
+    goalSvg=`<line x1="${pad.l}" y1="${gy}" x2="${W-pad.r}" y2="${gy}" stroke="var(--brand)" stroke-width="1.6" stroke-dasharray="6 4"/>
+      <text x="${W-pad.r}" y="${(+gy-5).toFixed(1)}" text-anchor="end" font-size="11" font-weight="700" fill="var(--brand)">🎯 Στόχος ${goal.toFixed(1)} kg</text>`;
+    const remain=(last.v-goal);
+    goalTxt = ` · <span style="color:var(--brand)">απομένουν ${Math.abs(remain).toFixed(1)} kg ${remain>0?'👇':'✔️'}</span>`;
+  }
+  return `
+  <div style="font-size:.9rem;margin-bottom:6px">
+    <b style="color:${meta.color}">${meta.label}</b> ·
+    πρώτη ${first.v}${meta.unit} → τελευταία <b>${last.v}${meta.unit}</b> ·
+    μεταβολή <b style="color:${diffColor}">${diffTxt}</b>${goalTxt}
+  </div>
+  <svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:520px;max-width:720px" xmlns="http://www.w3.org/2000/svg">
+    ${grid}
+    <polygon points="${area}" fill="${meta.color}" opacity="0.10"/>
+    <polyline points="${line}" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${goalSvg}${dots}${xlab}
+  </svg>`;
+}
+
+function renderProgress(){
+  const hist=loadHistory();
+  // which metrics have any data
+  const available=Object.keys(METRICS).filter(k=>hist.some(e=>e[k]!=null));
+  if(!available.includes(progMetric)) progMetric = available[0]||'weight';
+  // chips
+  $('#progChips').innerHTML = (available.length?available:['weight']).map(k=>
+    `<button data-m="${k}" class="${k===progMetric?'active':''}">${METRICS[k].label}</button>`).join('');
+  $$('#progChips button').forEach(b=>b.addEventListener('click',()=>{ progMetric=b.dataset.m; renderProgress(); }));
+  // chart
+  $('#chartWrap').innerHTML = hist.length? lineChart(hist, progMetric)
+    : `<div class="note">Δεν υπάρχουν ακόμη καταγραφές. Πάτησε «➕ Καταγραφή μέτρησης» για να ξεκινήσεις.</div>`;
+  // table
+  if(hist.length){
+    const cols=['weight','waist','bf','hip','chest','arm','thigh'].filter(k=>hist.some(e=>e[k]!=null));
+    const head=cols.map(k=>`<th>${METRICS[k].label}</th>`).join('');
+    const rows=hist.slice().reverse().map(e=>{
+      const tds=cols.map(k=>`<td>${e[k]!=null?e[k]+(METRICS[k].unit==='%'?'%':''):'–'}</td>`).join('');
+      return `<tr><td><b>${fmtDate(e.date)}</b></td>${tds}<td class="no-print"><button data-del="${e.date}" class="btn-ghost" style="padding:3px 8px">🗑️</button></td></tr>`;
+    }).join('');
+    $('#histTable').innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Ημ/νία</th>${head}<th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    $$('#histTable button[data-del]').forEach(b=>b.addEventListener('click',()=>deleteEntry(b.dataset.del)));
+  } else { $('#histTable').innerHTML=''; }
+}
+$('#recBtn').addEventListener('click',recordMeasurement);
+
+/* ===== FAMILY: comparison + aggregate shopping ===== */
+function fmtTotal(t){
+  if(t.u==='g'||t.u==='ml'){ let v=Math.round(t.q/10)*10; return v>=1000?(v/1000).toFixed(1).replace('.0','')+(t.u==='g'?' kg':' L'):v+' '+t.u; }
+  if(t.u==='×') return '×'+Math.round(t.q);
+  return Math.max(1,Math.round(t.q))+' '+t.u;
+}
+function cmpTable(pa,pb){
+  const A=calcFrom({...DEFAULT_INPUTS,...(pa.inputs||{})}), B=calcFrom({...DEFAULT_INPUTS,...(pb.inputs||{})});
+  const gn={lose:'Απώλεια βάρους',maintain:'Συντήρηση',gain:'Αύξηση βάρους'};
+  const esc=s=>String(s).replace(/</g,'&lt;');
+  const bf=c=>isNaN(c.bfUsed)?'–':c.bfUsed.toFixed(1)+'%';
+  const rows=[
+    ['Φύλο', A.sex==='male'?'Άνδρας':'Γυναίκα', B.sex==='male'?'Άνδρας':'Γυναίκα'],
+    ['Ηλικία', A.age+' ετών', B.age+' ετών'],
+    ['Ύψος', A.h+' cm', B.h+' cm'],
+    ['Βάρος', A.w+' kg', B.w+' kg'],
+    ['BMI', A.bmi.toFixed(1)+' ('+bmiCat(A.bmi).t+')', B.bmi.toFixed(1)+' ('+bmiCat(B.bmi).t+')'],
+    ['Λίπος σώματος', bf(A), bf(B)],
+    ['Στόχος', gn[A.goal], gn[B.goal]],
+    ['TDEE (συντήρηση)', A.tdee+' kcal', B.tdee+' kcal'],
+    ['Θερμίδες στόχου', A.target+' kcal', B.target+' kcal'],
+    ['Πρωτεΐνη', A.protG+' g', B.protG+' g'],
+    ['Υδατάνθρακες', A.carbG+' g', B.carbG+' g'],
+    ['Λίπος', A.fatG+' g', B.fatG+' g'],
+    ['Νερό/ημέρα', A.water.toFixed(1)+' L', B.water.toFixed(1)+' L']
+  ];
+  const body=rows.map(r=>`<tr><td style="color:var(--muted)">${r[0]}</td><td><b>${r[1]}</b></td><td><b>${r[2]}</b></td></tr>`).join('');
+  return `<table><thead><tr><th>Δείκτης</th><th>${esc(pa.name||'Α')}</th><th>${esc(pb.name||'Β')}</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+function cmpChart(pa,pb){
+  const A=calcFrom({...DEFAULT_INPUTS,...(pa.inputs||{})}), B=calcFrom({...DEFAULT_INPUTS,...(pb.inputs||{})});
+  const esc=s=>String(s).replace(/</g,'&lt;');
+  const metrics=[
+    ['Βάρος', A.w, B.w, 'kg'],
+    ['BMI', +A.bmi.toFixed(1), +B.bmi.toFixed(1), ''],
+    ['Λίπος σώματος', isNaN(A.bfUsed)?null:+A.bfUsed.toFixed(1), isNaN(B.bfUsed)?null:+B.bfUsed.toFixed(1), '%'],
+    ['Θερμίδες στόχου', A.target, B.target, 'kcal'],
+    ['Πρωτεΐνη', A.protG, B.protG, 'g'],
+    ['Νερό/ημέρα', +A.water.toFixed(1), +B.water.toFixed(1), 'L']
+  ];
+  let html=`<div class="cmpleg"><span><span class="dot barA"></span>${esc(pa.name||'Α')}</span><span><span class="dot barB"></span>${esc(pb.name||'Β')}</span></div>`;
+  metrics.forEach(([lab,a,b,u])=>{
+    if(a==null||b==null) return;
+    const mx=Math.max(a,b)||1;
+    html+=`<div class="cmpmetric"><div class="lab">${lab}</div>
+      <div class="cmprow"><div class="bar barA" style="width:${(a/mx*100).toFixed(1)}%"></div><span class="val">${a} ${u}</span></div>
+      <div class="cmprow"><div class="bar barB" style="width:${(b/mx*100).toFixed(1)}%"></div><span class="val">${b} ${u}</span></div></div>`;
+  });
+  return html;
+}
+function renderCompare(){
+  const s=loadStore(), ids=Object.keys(s.profiles);
+  if(ids.length<2){
+    $('#cmpChart').innerHTML='';
+    $('#cmpOut').innerHTML='<div class="note">Χρειάζονται τουλάχιστον 2 προφίλ για σύγκριση. Πρόσθεσε μέλος με το ➕ πάνω δεξιά.</div>';
+    return;
+  }
+  const a=$('#cmpA').value, b=$('#cmpB').value;
+  if(!s.profiles[a]||!s.profiles[b]) return;
+  $('#cmpChart').innerHTML=cmpChart(s.profiles[a], s.profiles[b]);
+  $('#cmpOut').innerHTML=cmpTable(s.profiles[a], s.profiles[b]);
+}
+function familyShoppingData(){
+  const s=loadStore(); const totals={}, counts={}, members=[];
+  Object.values(s.profiles).forEach(p=>{
+    const I={...DEFAULT_INPUTS,...(p.inputs||{})};
+    const c=calcFrom(I);
+    const factor=Math.min(1.5,Math.max(0.7,(c.target||2000)/2000));
+    const occ={};
+    weekMeals(I.diet||'mediterranean').forEach(day=>day.forEach(m=>{
+      (FOOD_ING[m.f.n]||[]).forEach(i=>{ occ[i]=(occ[i]||0)+1; });
+    }));
+    Object.entries(occ).forEach(([i,o])=>{
+      counts[i]=(counts[i]||0)+o;
+      const q=ING_QTY[i];
+      if(q){ totals[i]=totals[i]||{q:0,u:q.u}; totals[i].q += q.q*o*factor; }
+      else { totals[i]=totals[i]||{q:0,u:'×'}; totals[i].q += o; }
+    });
+    members.push(p.name||'Προφίλ');
+  });
+  return {totals,counts,members};
+}
+function renderFamily(){
+  const s=loadStore(), entries=Object.entries(s.profiles);
+  const opts=entries.map(([id,p])=>`<option value="${id}">${(p.name||'Προφίλ').replace(/</g,'&lt;')}</option>`).join('');
+  const selA=$('#cmpA'), selB=$('#cmpB'), pa=selA.value, pb=selB.value;
+  selA.innerHTML=opts; selB.innerHTML=opts;
+  selA.value = (pa&&s.profiles[pa])?pa:entries[0][0];
+  let bVal = (pb&&s.profiles[pb])?pb:'';
+  if(!bVal || bVal===selA.value){
+    const alt=entries.find(([id])=>id!==selA.value);
+    bVal = alt?alt[0]:selA.value;
+  }
+  selB.value=bVal;
+  renderCompare();
+  // aggregate shopping across all members
+  const {totals,members}=familyShoppingData();
+  const esc=x=>x.replace(/</g,'&lt;');
+  let html=`<div class="note">🛒 Άθροισμα ποσοτήτων για <b>${members.length} ${members.length===1?'μέλος':'μέλη'}</b> (${members.map(esc).join(', ')}) · 7 ημέρες.</div>`;
+  const known=new Set();
+  const row=i=>`<label class="meal" style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" style="width:auto;flex:0 0 auto"> <span class="mn">${i}</span><span class="mm" style="margin-left:auto;text-align:right"><b>${fmtTotal(totals[i])}</b></span></label>`;
+  for(const [cat,items] of Object.entries(ING_CAT)){
+    const present=items.filter(i=>totals[i]); present.forEach(i=>known.add(i));
+    if(!present.length) continue;
+    html+=`<div class="day"><h3>${cat}</h3>`+present.map(row).join('')+'</div>';
+  }
+  const other=Object.keys(totals).filter(i=>!known.has(i));
+  if(other.length) html+='<div class="day"><h3>📦 Άλλα</h3>'+other.map(row).join('')+'</div>';
+  $('#famShopOut').innerHTML=html;
+}
+$('#cmpA').addEventListener('change',renderCompare);
+$('#cmpB').addEventListener('change',renderCompare);
+
+/* ===== Minimal QR encoder (byte mode, ECC level L) — fully offline ===== */
+const QR=(function(){
+  const EXP=[],LOG=[];
+  (function(){let x=1;for(let i=0;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)EXP[i]=EXP[i-255];})();
+  const gmul=(a,b)=>(a&&b)?EXP[LOG[a]+LOG[b]]:0;
+  function rsGen(n){let g=[1];for(let i=0;i<n;i++){const ng=new Array(g.length+1).fill(0);for(let j=0;j<g.length;j++)ng[j]^=g[j];for(let j=0;j<g.length;j++)ng[j+1]^=gmul(g[j],EXP[i]);g=ng;}return g;}
+  function rsEnc(data,n){const gen=rsGen(n);const buf=data.concat(new Array(n).fill(0));for(let i=0;i<data.length;i++){const c=buf[i];if(c){for(let j=0;j<gen.length;j++)buf[i+j]^=gmul(gen[j],c);}}return buf.slice(data.length);}
+  // error-correction table: level -> version -> [ecPerBlock, [[count,dataLen],...]]
+  const ECT={
+    L:{1:[7,[[1,19]]],2:[10,[[1,34]]],3:[15,[[1,55]]],4:[20,[[1,80]]],5:[26,[[1,108]]],6:[18,[[2,68]]],7:[20,[[2,78]]],8:[24,[[2,97]]],9:[30,[[2,116]]],10:[18,[[2,68],[2,69]]],11:[20,[[4,81]]],12:[24,[[2,92],[2,93]]],13:[26,[[4,107]]],14:[30,[[3,115],[1,116]]],15:[22,[[5,87],[1,88]]],16:[24,[[5,98],[1,99]]],17:[28,[[1,107],[5,108]]],18:[30,[[5,120],[1,121]]],19:[28,[[3,113],[4,114]]],20:[28,[[3,107],[5,108]]],21:[28,[[4,116],[4,117]]],22:[28,[[2,111],[7,112]]],23:[30,[[4,121],[5,122]]],24:[30,[[6,117],[4,118]]],25:[26,[[8,106],[4,107]]],26:[28,[[10,114],[2,115]]],27:[30,[[8,122],[4,123]]],28:[30,[[3,117],[10,118]]],29:[30,[[7,116],[7,117]]],30:[30,[[5,115],[10,116]]],31:[30,[[13,115],[3,116]]],32:[30,[[17,115]]],33:[30,[[17,115],[1,116]]],34:[30,[[13,115],[6,116]]],35:[30,[[12,121],[7,122]]],36:[30,[[6,121],[14,122]]],37:[30,[[17,122],[4,123]]],38:[30,[[4,122],[18,123]]],39:[30,[[20,117],[4,118]]],40:[30,[[19,118],[6,119]]]},
+    M:{1:[10,[[1,16]]],2:[16,[[1,28]]],3:[26,[[1,44]]],4:[18,[[2,32]]],5:[24,[[2,43]]],6:[16,[[4,27]]],7:[18,[[4,31]]],8:[22,[[2,38],[2,39]]],9:[22,[[3,36],[2,37]]],10:[26,[[4,43],[1,44]]],11:[30,[[1,50],[4,51]]],12:[22,[[6,36],[2,37]]],13:[22,[[8,37],[1,38]]],14:[24,[[4,40],[5,41]]],15:[24,[[5,41],[5,42]]],16:[28,[[7,45],[3,46]]],17:[28,[[10,46],[1,47]]],18:[26,[[9,43],[4,44]]],19:[26,[[3,44],[11,45]]],20:[26,[[3,41],[13,42]]],21:[26,[[17,42]]],22:[28,[[17,46]]],23:[28,[[4,47],[14,48]]],24:[28,[[6,45],[14,46]]],25:[28,[[8,47],[13,48]]],26:[28,[[19,46],[4,47]]],27:[28,[[22,45],[3,46]]],28:[28,[[3,45],[23,46]]],29:[28,[[21,45],[7,46]]],30:[28,[[19,47],[10,48]]],31:[28,[[2,46],[29,47]]],32:[28,[[10,46],[23,47]]],33:[28,[[14,46],[21,47]]],34:[28,[[14,46],[23,47]]],35:[28,[[12,47],[26,48]]],36:[28,[[6,47],[34,48]]],37:[28,[[29,46],[14,47]]],38:[28,[[13,46],[32,47]]],39:[28,[[40,47],[7,48]]],40:[28,[[18,47],[31,48]]]},
+    Q:{1:[13,[[1,13]]],2:[22,[[1,22]]],3:[18,[[2,17]]],4:[26,[[2,24]]],5:[18,[[2,15],[2,16]]],6:[24,[[4,19]]],7:[18,[[2,14],[4,15]]],8:[22,[[4,18],[2,19]]],9:[20,[[4,16],[4,17]]],10:[24,[[6,19],[2,20]]],11:[28,[[4,22],[4,23]]],12:[26,[[4,20],[6,21]]],13:[24,[[8,20],[4,21]]],14:[20,[[11,16],[5,17]]],15:[30,[[5,24],[7,25]]],16:[24,[[15,19],[2,20]]],17:[28,[[1,22],[15,23]]],18:[28,[[17,22],[1,23]]],19:[26,[[17,21],[4,22]]],20:[30,[[15,24],[5,25]]],21:[28,[[17,22],[6,23]]],22:[30,[[7,24],[16,25]]],23:[30,[[11,24],[14,25]]],24:[30,[[11,24],[16,25]]],25:[30,[[7,24],[22,25]]],26:[28,[[28,22],[6,23]]],27:[30,[[8,23],[26,24]]],28:[30,[[4,24],[31,25]]],29:[30,[[1,23],[37,24]]],30:[30,[[15,24],[25,25]]],31:[30,[[42,24],[1,25]]],32:[30,[[10,24],[35,25]]],33:[30,[[29,24],[19,25]]],34:[30,[[44,24],[7,25]]],35:[30,[[39,24],[14,25]]],36:[30,[[46,24],[10,25]]],37:[30,[[49,24],[10,25]]],38:[30,[[48,24],[14,25]]],39:[30,[[43,24],[22,25]]],40:[30,[[34,24],[34,25]]]},
+    H:{1:[17,[[1,9]]],2:[28,[[1,16]]],3:[22,[[2,13]]],4:[16,[[4,9]]],5:[22,[[2,11],[2,12]]],6:[28,[[4,15]]],7:[26,[[4,13],[1,14]]],8:[26,[[4,14],[2,15]]],9:[24,[[4,12],[4,13]]],10:[28,[[6,15],[2,16]]],11:[24,[[3,12],[8,13]]],12:[28,[[7,14],[4,15]]],13:[22,[[12,11],[4,12]]],14:[24,[[11,12],[5,13]]],15:[24,[[11,12],[7,13]]],16:[30,[[3,15],[13,16]]],17:[28,[[2,14],[17,15]]],18:[28,[[2,14],[19,15]]],19:[26,[[9,13],[16,14]]],20:[28,[[15,15],[10,16]]],21:[30,[[19,16],[6,17]]],22:[24,[[34,13]]],23:[30,[[16,15],[14,16]]],24:[30,[[30,16],[2,17]]],25:[30,[[22,15],[13,16]]],26:[30,[[33,16],[4,17]]],27:[30,[[12,15],[28,16]]],28:[30,[[11,15],[31,16]]],29:[30,[[19,15],[26,16]]],30:[30,[[23,15],[25,16]]],31:[30,[[23,15],[28,16]]],32:[30,[[19,15],[35,16]]],33:[30,[[11,15],[46,16]]],34:[30,[[59,16],[1,17]]],35:[30,[[22,15],[41,16]]],36:[30,[[2,15],[64,16]]],37:[30,[[24,15],[46,16]]],38:[30,[[42,15],[32,16]]],39:[30,[[10,15],[67,16]]],40:[30,[[20,15],[61,16]]]}
+  };
+  const ECLNUM={L:1,M:0,Q:3,H:2}, ECLNAME={1:'L',0:'M',3:'Q',2:'H'};
+  const ALIGN={1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50],11:[6,30,54],12:[6,32,58],13:[6,34,62],14:[6,26,46,66],15:[6,26,48,70],16:[6,26,50,74],17:[6,30,54,78],18:[6,30,56,82],19:[6,30,58,86],20:[6,34,62,90],21:[6,28,50,72,94],22:[6,26,50,74,98],23:[6,30,54,78,102],24:[6,28,54,80,106],25:[6,32,58,84,110],26:[6,30,58,86,114],27:[6,34,62,90,118],28:[6,26,50,74,98,122],29:[6,30,54,78,102,126],30:[6,26,52,78,104,130],31:[6,30,56,82,108,134],32:[6,34,60,86,112,138],33:[6,30,58,86,114,142],34:[6,34,62,90,118,146],35:[6,30,54,78,102,126,150],36:[6,24,50,76,102,128,154],37:[6,28,54,80,106,132,158],38:[6,32,58,84,110,136,162],39:[6,26,54,82,110,138,166],40:[6,30,58,86,114,142,170]};
+  const tData=(v,l)=>ECT[l][v][1].reduce((t,b)=>t+b[0]*b[1],0);
+  function encode(text,lvl){
+    lvl=lvl||'L';
+    const bytes=Array.from(new TextEncoder().encode(text));
+    let ver=0;
+    for(let v=1;v<=40;v++){ const cc=v<10?8:16; if(4+cc+bytes.length*8<=tData(v,lvl)*8){ver=v;break;} }
+    if(!ver) return null;
+    const cc=ver<10?8:16, bb=[];
+    const put=(val,len)=>{for(let i=len-1;i>=0;i--)bb.push((val>>i)&1);};
+    put(4,4); put(bytes.length,cc); bytes.forEach(b=>put(b,8));
+    const cap=tData(ver,lvl)*8;
+    for(let i=0;i<4&&bb.length<cap;i++)bb.push(0);
+    while(bb.length%8)bb.push(0);
+    const pads=[236,17]; let pi=0;
+    while(bb.length<cap){put(pads[pi++%2],8);}
+    const dcw=[]; for(let i=0;i<bb.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bb[i+j];dcw.push(b);}
+    const blocks=[], ecLen=ECT[lvl][ver][0]; let idx=0;
+    ECT[lvl][ver][1].forEach(([cnt,len])=>{for(let k=0;k<cnt;k++){const d=dcw.slice(idx,idx+len);idx+=len;blocks.push({d,e:rsEnc(d,ecLen)});}});
+    const out=[], maxD=Math.max(...blocks.map(b=>b.d.length)), maxE=Math.max(...blocks.map(b=>b.e.length));
+    for(let i=0;i<maxD;i++)blocks.forEach(b=>{if(i<b.d.length)out.push(b.d[i]);});
+    for(let i=0;i<maxE;i++)blocks.forEach(b=>{if(i<b.e.length)out.push(b.e[i]);});
+    const dataBits=[]; out.forEach(b=>{for(let i=7;i>=0;i--)dataBits.push((b>>i)&1);});
+    return {ver,dataBits,lvl};
+  }
+  function buildMatrix(ver,dataBits){
+    const size=17+4*ver;
+    const m=Array.from({length:size},()=>new Array(size).fill(null));
+    const res=Array.from({length:size},()=>new Array(size).fill(false));
+    const setF=(r,c,v)=>{m[r][c]=v?1:0;res[r][c]=true;};
+    function finder(r,c){for(let i=-1;i<=7;i++)for(let j=-1;j<=7;j++){const rr=r+i,cc=c+j;if(rr<0||rr>=size||cc<0||cc>=size)continue;const inb=(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);setF(rr,cc,inb);}}
+    finder(0,0);finder(0,size-7);finder(size-7,0);
+    for(let i=8;i<size-8;i++){if(!res[6][i])setF(6,i,i%2===0);if(!res[i][6])setF(i,6,i%2===0);}
+    // reserve format
+    for(let i=0;i<=8;i++){if(i!==6){res[8][i]=true;res[i][8]=true;}}
+    for(let i=0;i<8;i++){res[8][size-1-i]=true;res[size-1-i][8]=true;}
+    setF(size-8,8,true); // dark module
+    // alignment
+    const ap=ALIGN[ver];
+    for(let i=0;i<ap.length;i++)for(let j=0;j<ap.length;j++){const r=ap[i],c=ap[j];if(res[r][c])continue;for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)setF(r+dr,c+dc,Math.max(Math.abs(dr),Math.abs(dc))!==1);}
+    // version info reserve
+    if(ver>=7){for(let i=0;i<6;i++)for(let j=0;j<3;j++){res[i][size-11+j]=true;res[size-11+j][i]=true;}}
+    // data placement (zigzag)
+    let di=0, up=true;
+    for(let col=size-1;col>0;col-=2){
+      if(col===6)col--;
+      for(let k=0;k<size;k++){
+        const row=up?size-1-k:k;
+        for(let s=0;s<2;s++){const cc=col-s;if(res[row][cc])continue;m[row][cc]=di<dataBits.length?dataBits[di]:0;di++;}
+      }
+      up=!up;
+    }
+    return {m,res,size};
+  }
+  function maskFn(mask,r,c){switch(mask){case 0:return(r+c)%2===0;case 1:return r%2===0;case 2:return c%3===0;case 3:return(r+c)%3===0;case 4:return(Math.floor(r/2)+Math.floor(c/3))%2===0;case 5:return((r*c)%2)+((r*c)%3)===0;case 6:return(((r*c)%2)+((r*c)%3))%2===0;default:return(((r+c)%2)+((r*c)%3))%2===0;}}
+  function applyMask(m,res,size,mask){const o=m.map(r=>r.slice());for(let r=0;r<size;r++)for(let c=0;c<size;c++){if(!res[r][c]&&maskFn(mask,r,c))o[r][c]^=1;}return o;}
+  function fmtBits(ecl,mask){let data=(ecl<<3)|mask,d=data<<10;for(let i=14;i>=10;i--)if((d>>i)&1)d^=0x537<<(i-10);return((data<<10)|d)^0x5412;}
+  function verBits(ver){let d=ver<<12;for(let i=17;i>=12;i--)if((d>>i)&1)d^=0x1f25<<(i-12);return(ver<<12)|d;}
+  function placeFormat(m,size,ecl,mask){
+    const bits=fmtBits(ecl,mask);
+    for(let i=0;i<15;i++){const b=(bits>>i)&1;
+      if(i<6)m[8][i]=b; else if(i<8)m[8][i+1]=b; else if(i===8)m[7][8]=b; else m[14-i][8]=b;
+      if(i<7)m[size-1-i][8]=b; else m[8][size-15+i]=b;
+    }
+    m[size-8][8]=1;
+  }
+  function placeVersion(m,size,ver){if(ver<7)return;const bits=verBits(ver);for(let i=0;i<18;i++){const b=(bits>>i)&1,r=Math.floor(i/3),c=i%3;m[r][size-11+c]=b;m[size-11+c][r]=b;}}
+  function penalty(m,size){
+    let p=0;
+    for(let r=0;r<size;r++){let rc=1,cc=1;for(let c=1;c<size;c++){if(m[r][c]===m[r][c-1])rc++;else{if(rc>=5)p+=3+rc-5;rc=1;}if(m[c][r]===m[c-1][r])cc++;else{if(cc>=5)p+=3+cc-5;cc=1;}}if(rc>=5)p+=3+rc-5;if(cc>=5)p+=3+cc-5;}
+    for(let r=0;r<size-1;r++)for(let c=0;c<size-1;c++){const v=m[r][c];if(v===m[r][c+1]&&v===m[r+1][c]&&v===m[r+1][c+1])p+=3;}
+    const p1=[1,0,1,1,1,0,1,0,0,0,0],p2=[0,0,0,0,1,0,1,1,1,0,1];
+    const chk=line=>{let s=0;for(let i=0;i+11<=line.length;i++){let a=true,b=true;for(let k=0;k<11;k++){if(line[i+k]!==p1[k])a=false;if(line[i+k]!==p2[k])b=false;}if(a||b)s+=40;}return s;};
+    for(let r=0;r<size;r++){p+=chk(m[r]);const col=[];for(let c=0;c<size;c++)col.push(m[c][r]);p+=chk(col);}
+    let dark=0;for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(m[r][c])dark++;
+    p+=Math.floor(Math.abs(dark/(size*size)*100-50)/5)*10;
+    return p;
+  }
+  function generate(text,lvl){
+    const enc=encode(text,lvl); if(!enc)return null;
+    const base=buildMatrix(enc.ver,enc.dataBits);
+    const eclNum=ECLNUM[enc.lvl];
+    let best=null,bp=Infinity;
+    for(let mask=0;mask<8;mask++){
+      const mm=applyMask(base.m,base.res,base.size,mask);
+      placeFormat(mm,base.size,eclNum,mask); placeVersion(mm,base.size,enc.ver);
+      const p=penalty(mm,base.size);
+      if(p<bp){bp=p;best=mm;}
+    }
+    return {size:base.size,modules:best,ver:enc.ver,lvl:enc.lvl};
+  }
+  function _decode(modules,size){ // roundtrip self-test only
+    const ver=(size-17)/4;
+    let val=0;
+    for(let i=0;i<15;i++){let b;if(i<6)b=modules[8][i];else if(i<8)b=modules[8][i+1];else if(i===8)b=modules[7][8];else b=modules[14-i][8];val|=(b<<i);}
+    const fmt=val^0x5412, mask=(fmt>>10)&7, lvl=ECLNAME[(fmt>>13)&3];
+    const res=buildMatrix(ver,[]).res;
+    const bits=[]; let up=true;
+    for(let col=size-1;col>0;col-=2){ if(col===6)col--; for(let k=0;k<size;k++){const row=up?size-1-k:k;for(let s=0;s<2;s++){const cc=col-s;if(res[row][cc])continue;let b=modules[row][cc];if(maskFn(mask,row,cc))b^=1;bits.push(b);}} up=!up; }
+    const cw=[]; for(let i=0;i+8<=bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bits[i+j];cw.push(b);}
+    const lens=[]; ECT[lvl][ver][1].forEach(([cnt,len])=>{for(let k=0;k<cnt;k++)lens.push(len);});
+    const totalD=lens.reduce((a,b)=>a+b,0), dataCW=cw.slice(0,totalD), maxD=Math.max(...lens);
+    const blocks=lens.map(()=>[]); let p=0;
+    for(let i=0;i<maxD;i++)for(let bI=0;bI<lens.length;bI++)if(i<lens[bI])blocks[bI].push(dataCW[p++]);
+    const dcw=[].concat(...blocks);
+    let bb=[]; dcw.forEach(b=>{for(let i=7;i>=0;i--)bb.push((b>>i)&1);});
+    let pos=0; const take=n=>{let v=0;for(let i=0;i<n;i++)v=(v<<1)|bb[pos++];return v;};
+    take(4); const cc=ver<10?8:16, len=take(cc), by=[];
+    for(let i=0;i<len;i++)by.push(take(8));
+    return new TextDecoder().decode(new Uint8Array(by));
+  }
+  return {generate,_decode};
+})();
+function shoppingQRText(mode){
+  const g=shoppingGroups(mode);
+  let s=g.title+' ('+g.sub+')\n';
+  g.groups.forEach(gr=>gr.items.forEach(it=>{ s+=it.name+' '+it.qty+'\n'; }));
+  return s.trim();
+}
+
+/* ===== shopping list: structured data → .txt / print / image ===== */
+function shoppingGroups(mode){
+  let title, sub='', groups=[];
+  const push=(cat,items,fmt)=>{ if(items.length) groups.push({cat, items:items.map(i=>({name:i, qty:fmt(i)}))}); };
+  if(mode==='family'){
+    const {totals,members}=familyShoppingData();
+    title='Λίστα Αγορών — Οικογένεια'; sub=members.join(', ')+' · 7 ημέρες';
+    const known=new Set(), fmt=i=>fmtTotal(totals[i]);
+    for(const [cat,items] of Object.entries(ING_CAT)){ const p=items.filter(i=>totals[i]); p.forEach(i=>known.add(i)); push(cat,p,fmt); }
+    push('📦 Άλλα', Object.keys(totals).filter(i=>!known.has(i)), fmt);
+  } else {
+    const I=collectInputs(), c=calcFrom(I), dietPref=I.diet||'mediterranean';
+    const factor=Math.min(1.5,Math.max(0.7,(c.target||2000)/2000))*shopPeople;
+    const occ={}; weekMeals(dietPref).forEach(day=>day.forEach(m=>{(FOOD_ING[m.f.n]||[]).forEach(i=>{occ[i]=(occ[i]||0)+1;});}));
+    title='Λίστα Αγορών — '+(curProfile().name||'Προφίλ');
+    sub='7 ημέρες · ~'+c.target+' kcal · '+shopPeople+' '+(shopPeople===1?'άτομο':'άτομα');
+    const known=new Set(), fmt=i=>fmtQty(i,occ[i],factor);
+    for(const [cat,items] of Object.entries(ING_CAT)){ const p=items.filter(i=>occ[i]); p.forEach(i=>known.add(i)); push(cat,p,fmt); }
+    push('📦 Άλλα', Object.keys(occ).filter(i=>!known.has(i)), fmt);
+  }
+  return {title, sub, groups};
+}
+function shoppingLines(mode){
+  const g=shoppingGroups(mode);
+  const lines=[g.title, g.sub, '='.repeat(38)];
+  g.groups.forEach(gr=>{ lines.push(''); lines.push(gr.cat); gr.items.forEach(it=>lines.push('  [ ] '+it.name+' — '+it.qty)); });
+  return {title:g.title, text:lines.join('\n')};
+}
+function shoppingImage(mode){
+  const g=shoppingGroups(mode);
+  const W=560, pad=24, lineH=27, catAdv=30, gapAfter=10;
+  let content=0; g.groups.forEach(gr=>content += catAdv + gr.items.length*lineH + gapAfter);
+  // QR code of the list
+  let qr=null, qmp=0, qpx=0;
+  try{ const qt=shoppingQRText(mode); qr=QR.generate(qt,qrEcl)||QR.generate(qt,'L'); }catch(e){ qr=null; }
+  if(qr){ const target={small:240,medium:330,large:470}[qrSize]||330; qmp=Math.min(10,Math.max(2,Math.round(target/qr.size))); qpx=(qr.size+8)*qmp; }
+  const qrArea = qr ? qpx+24 : 0;
+  const H = 60 + pad + content + qrArea + 22;
+  const sc=2, cv=document.createElement('canvas');
+  cv.width=W*sc; cv.height=H*sc;
+  const x=cv.getContext('2d'); x.scale(sc,sc);
+  x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
+  x.fillStyle='#22c1a4'; x.fillRect(0,0,W,54);
+  x.fillStyle='#03222b'; x.textBaseline='alphabetic';
+  x.font='700 20px Segoe UI,system-ui,Arial'; x.fillText(g.title, pad, 27);
+  x.font='400 12px Segoe UI,system-ui,Arial'; x.fillText(g.sub, pad, 45);
+  let y=54+pad;
+  g.groups.forEach(gr=>{
+    x.fillStyle='#0f9e86'; x.font='700 15px Segoe UI,system-ui,Arial'; x.textAlign='left';
+    x.fillText(gr.cat, pad, y); y+=catAdv;
+    gr.items.forEach(it=>{
+      x.strokeStyle='#b3c0cc'; x.lineWidth=1.3; x.strokeRect(pad, y-12, 13,13);
+      x.fillStyle='#132330'; x.font='400 14px Segoe UI,system-ui,Arial'; x.textAlign='left';
+      x.fillText(it.name, pad+22, y);
+      x.fillStyle='#0f9e86'; x.font='700 14px Segoe UI,system-ui,Arial'; x.textAlign='right';
+      x.fillText(it.qty, W-pad, y);
+      y+=lineH;
+    });
+    y+=gapAfter;
+  });
+  // QR code + caption
+  if(qr){
+    const qx=pad, qy=y+4;
+    x.fillStyle='#ffffff'; x.fillRect(qx,qy,qpx,qpx);
+    x.fillStyle='#000000';
+    for(let r=0;r<qr.size;r++)for(let c=0;c<qr.size;c++){ if(qr.modules[r][c]) x.fillRect(qx+(c+4)*qmp, qy+(r+4)*qmp, qmp, qmp); }
+    x.fillStyle='#132330'; x.textAlign='left'; x.font='600 14px Segoe UI,system-ui,Arial';
+    x.fillText('📱 Σκάναρε για τη λίστα', qx+qpx+16, qy+qpx/2-12);
+    x.fillStyle='#5c6b7a'; x.font='400 12px Segoe UI,system-ui,Arial';
+    x.fillText('(άνοιξε την κάμερα του κινητού)', qx+qpx+16, qy+qpx/2+8);
+    const qlbl={L:'Κανονική',M:'Υψηλή',Q:'Μέγιστη',H:'Μέγιστη+'}[qr.lvl]||qr.lvl;
+    x.fillText('Ποιότητα: '+qlbl+' · v'+qr.ver, qx+qpx+16, qy+qpx/2+26);
+    y=qy+qpx+8;
+  }
+  x.fillStyle='#5c6b7a'; x.font='400 11px Segoe UI,system-ui,Arial'; x.textAlign='left';
+  x.fillText('FitPlan · '+new Date().toLocaleDateString('el-GR'), pad, H-9);
+  return cv;
+}
+function saveImage(mode){
+  const cv=shoppingImage(mode);
+  const a=document.createElement('a');
+  a.href=cv.toDataURL('image/png');
+  a.download='lista-agoron'+(mode==='family'?'-oikogeneia':'')+'.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function downloadText(filename, text){
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(text);
+  a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+}
+function printText(text, heading){
+  const esc=text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const f=document.createElement('iframe');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f);
+  const d=f.contentWindow.document;
+  d.open(); d.write('<html><head><title>'+heading+'</title></head><body><pre style="font:14px/1.6 system-ui,Arial,sans-serif;white-space:pre-wrap">'+esc+'</pre></body></html>'); d.close();
+  f.contentWindow.focus();
+  setTimeout(()=>{ try{ f.contentWindow.print(); }catch(e){ window.print(); } setTimeout(()=>f.remove(),600); },250);
+}
+$('#shopPeople').addEventListener('change',e=>{
+  shopPeople=parseInt(e.target.value)||1;
+  curProfile().people=shopPeople; saveStore();
+  $('#shopOut').innerHTML=buildShopping(calc(), collectInputs().diet||'mediterranean', shopPeople);
+});
+function syncQrControls(){ ['#qrEclShop','#qrEclFam'].forEach(s=>{const el=$(s);if(el)el.value=qrEcl;}); ['#qrSizeShop','#qrSizeFam'].forEach(s=>{const el=$(s);if(el)el.value=qrSize;}); }
+['#qrEclShop','#qrEclFam'].forEach(s=>$(s).addEventListener('change',e=>{qrEcl=e.target.value;syncQrControls();}));
+['#qrSizeShop','#qrSizeFam'].forEach(s=>$(s).addEventListener('change',e=>{qrSize=e.target.value;syncQrControls();}));
+syncQrControls();
+$('#shopTxtBtn').addEventListener('click',()=>{ const o=shoppingLines('single'); downloadText('lista-agoron.txt', o.text); });
+$('#shopImgBtn').addEventListener('click',()=>saveImage('single'));
+$('#shopPrintBtn').addEventListener('click',()=>{ const o=shoppingLines('single'); printText(o.text, o.title); });
+$('#famTxtBtn').addEventListener('click',()=>{ const o=shoppingLines('family'); downloadText('lista-agoron-oikogeneia.txt', o.text); });
+$('#famImgBtn').addEventListener('click',()=>saveImage('family'));
+$('#famPrintBtn').addEventListener('click',()=>{ const o=shoppingLines('family'); printText(o.text, o.title); });
+
+/* ===== Export / Import (backup) ===== */
+$('#exportBtn').addEventListener('click',()=>{
+  const p=curProfile();
+  const data={app:'FitPlan', version:2, exported:new Date().toISOString(),
+              profileName:p.name, profile:collectInputs(), history:loadHistory()};
+  const json=JSON.stringify(data,null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(json);
+  const safe=(p.name||'profil').replace(/[^\wͰ-Ͽ-]+/g,'_');
+  a.download='fitplan-'+safe+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('#importBtn').addEventListener('click',()=>$('#importFile').click());
+$('#importFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      const imp=Array.isArray(data)?data:(data.history||[]);
+      if(!Array.isArray(imp)) throw 0;
+      // merge by date (imported wins)
+      const byDate={}; loadHistory().forEach(x=>byDate[x.date]=x); imp.forEach(x=>{ if(x&&x.date) byDate[x.date]=x; });
+      const merged=Object.values(byDate).sort((a,b)=>a.date.localeCompare(b.date));
+      saveHistory(merged);
+      if(data.profile && confirm('Να φορτωθούν & τα στοιχεία προφίλ (βάρος/ύψος κ.λπ.) από το αρχείο στο τρέχον προφίλ;')){
+        applyInputs(data.profile);
+        const p=curProfile(); p.inputs=data.profile;
+        if(data.profileName) p.name=data.profileName;
+        saveStore(); refreshProfileSel();
+      }
+      renderProgress();
+      alert('Εισαγωγή επιτυχής: '+imp.length+' εγγραφές (σύνολο '+merged.length+').');
+    }catch(err){ alert('Το αρχείο δεν είναι έγκυρο backup FitPlan.'); }
+    $('#importFile').value='';
+  };
+  r.readAsText(file);
+});
+
+/* ===== PWA: icon + manifest + fullscreen + install (all offline, single-file) ===== */
+function makeIcon(size){
+  const cv=document.createElement('canvas'); cv.width=cv.height=size;
+  const x=cv.getContext('2d');
+  const g=x.createLinearGradient(0,0,size,size); g.addColorStop(0,'#22c1a4'); g.addColorStop(1,'#2d9cdb');
+  const r=size*0.22; x.fillStyle=g; x.beginPath();
+  x.moveTo(r,0); x.arcTo(size,0,size,size,r); x.arcTo(size,size,0,size,r); x.arcTo(0,size,0,0,r); x.arcTo(0,0,size,0,r); x.closePath(); x.fill();
+  x.textAlign='center'; x.textBaseline='middle';
+  x.font=Math.round(size*0.5)+'px "Segoe UI Emoji","Apple Color Emoji",system-ui,sans-serif';
+  x.fillText('🏋️', size/2, size*0.55);
+  return cv.toDataURL('image/png');
+}
+function setupPWA(){
+  try{
+    const served = location.protocol==='http:'||location.protocol==='https:';
+    if(served){
+      // when hosted (e.g. GitHub Pages): use static files + real service worker → installable, offline
+      const ml=$('#manifestLink'); if(ml) ml.href='manifest.json';
+      const ti=$('#touchIcon'); if(ti) ti.href='icon-192.png';
+      const fi=$('#favIcon'); if(fi) fi.href='icon-192.png';
+      if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+      return;
+    }
+    // opened as a local file (file://): build manifest + icons at runtime (no server needed)
+    const i192=makeIcon(192), i512=makeIcon(512);
+    const manifest={
+      name:'FitPlan — Διατροφή & Γυμναστική', short_name:'FitPlan',
+      description:'Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής',
+      start_url:'./', scope:'./', display:'standalone', orientation:'portrait-primary',
+      background_color:'#0f1720', theme_color:'#22c1a4', lang:'el',
+      icons:[
+        {src:i192,sizes:'192x192',type:'image/png',purpose:'any'},
+        {src:i512,sizes:'512x512',type:'image/png',purpose:'any'},
+        {src:i512,sizes:'512x512',type:'image/png',purpose:'maskable'}
+      ]
+    };
+    const url=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
+    const ml=$('#manifestLink'); if(ml) ml.href=url;
+    const ti=$('#touchIcon'); if(ti) ti.href=i192;
+    const fi=$('#favIcon'); if(fi) fi.href=i192;
+  }catch(e){}
+}
+// fullscreen toggle (works on PC / Android / tablet)
+$('#fsBtn').addEventListener('click',()=>{
+  const el=document.documentElement, d=document;
+  const isFs=d.fullscreenElement||d.webkitFullscreenElement;
+  try{
+    if(!isFs){ (el.requestFullscreen||el.webkitRequestFullscreen||el.webkitRequestFullScreen).call(el); }
+    else { (d.exitFullscreen||d.webkitExitFullscreen).call(d); }
+  }catch(e){ alert('Η πλήρης οθόνη δεν υποστηρίζεται εδώ. Σε iPhone: «Κοινή χρήση → Προσθήκη στην αρχική οθόνη» και άνοιξέ το από το εικονίδιο.'); }
+});
+// install prompt (Android/desktop Chrome, when served)
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').style.display='inline-block'; });
+$('#installBtn').addEventListener('click',async()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').style.display='none';
+});
+window.addEventListener('appinstalled',()=>{ $('#installBtn').style.display='none'; });
+
+/* auto-load on start: profiles store */
+(function(){
+  setupPWA();
+  loadStore();
+  refreshProfileSel();
+  applyProfile();
+  $('#recDate').value=new Date().toISOString().slice(0,10);
+  renderProgress();
+})();
+</script>
+</body>
+</html>
