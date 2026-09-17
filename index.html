@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FitPlan — Διατροφή & Γυμναστική</title>
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#22c1a4">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FitPlan">
 <meta name="description" content="Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής — λειτουργεί offline.">
-<link rel="manifest" id="manifestLink" href="manifest.webmanifest">
-<link rel="apple-touch-icon" id="touchIcon" href="icon-192.png">
-<link rel="icon" id="favIcon" href="icon-192.png">
-<title>FitPlan — Διατροφή & Γυμναστική</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
   --bg:#0f1720; --panel:#161f2b; --panel2:#1d2836; --line:#26323f;
@@ -1722,47 +1722,9 @@ $('#importFile').addEventListener('change',e=>{
   r.readAsText(file);
 });
 
-/* ===== PWA: icon + manifest + fullscreen + install (all offline, single-file) ===== */
-function makeIcon(size){
-  const cv=document.createElement('canvas'); cv.width=cv.height=size;
-  const x=cv.getContext('2d');
-  const g=x.createLinearGradient(0,0,size,size); g.addColorStop(0,'#22c1a4'); g.addColorStop(1,'#2d9cdb');
-  const r=size*0.22; x.fillStyle=g; x.beginPath();
-  x.moveTo(r,0); x.arcTo(size,0,size,size,r); x.arcTo(size,size,0,size,r); x.arcTo(0,size,0,0,r); x.arcTo(0,0,size,0,r); x.closePath(); x.fill();
-  x.textAlign='center'; x.textBaseline='middle';
-  x.font=Math.round(size*0.5)+'px "Segoe UI Emoji","Apple Color Emoji",system-ui,sans-serif';
-  x.fillText('🏋️', size/2, size*0.55);
-  return cv.toDataURL('image/png');
-}
-function setupPWA(){
-  const served = location.protocol==='http:'||location.protocol==='https:';
-  if(served){
-    // HOSTED: the static <link rel="manifest" href="manifest.webmanifest"> + icons in <head> do the job.
-    // Do NOT touch them from JS (that can break installability). Just register the service worker.
-    if('serviceWorker' in navigator){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-    }
-    return;
-  }
-  // LOCAL FILE (file://): manifest.webmanifest can't load, so build one at runtime + data-uri icons.
-  try{
-    const i192=makeIcon(192), i512=makeIcon(512);
-    const manifest={
-      name:'FitPlan — Διατροφή & Γυμναστική', short_name:'FitPlan',
-      description:'Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής',
-      start_url:'./', scope:'./', display:'standalone', orientation:'portrait-primary',
-      background_color:'#0f1720', theme_color:'#22c1a4', lang:'el',
-      icons:[
-        {src:i192,sizes:'192x192',type:'image/png',purpose:'any'},
-        {src:i512,sizes:'512x512',type:'image/png',purpose:'any'},
-        {src:i512,sizes:'512x512',type:'image/png',purpose:'maskable'}
-      ]
-    };
-    const url=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
-    const ml=$('#manifestLink'); if(ml) ml.href=url;
-    const ti=$('#touchIcon'); if(ti) ti.href=i192;
-    const fi=$('#favIcon'); if(fi) fi.href=i192;
-  }catch(e){}
+/* ===== PWA (ίδιο μοτίβο με Playlist360): static manifest + SW, μηδέν JS στο manifest ===== */
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 // fullscreen toggle (works on PC / Android / tablet)
 $('#fsBtn').addEventListener('click',()=>{
@@ -1821,7 +1783,6 @@ $('#installNow').addEventListener('click',async()=>{
 
 /* auto-load on start: profiles store */
 (function(){
-  setupPWA();
   loadStore();
   refreshProfileSel();
   applyProfile();
