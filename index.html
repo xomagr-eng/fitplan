@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FitPlan">
 <meta name="description" content="Αυτόματα προγράμματα διατροφής, δίαιτας & γυμναστικής — λειτουργεί offline.">
-<link rel="manifest" id="manifestLink" href="manifest.json">
+<link rel="manifest" id="manifestLink" href="manifest.webmanifest">
 <link rel="apple-touch-icon" id="touchIcon" href="icon-192.png">
 <link rel="icon" id="favIcon" href="icon-192.png">
 <title>FitPlan — Διατροφή & Γυμναστική</title>
@@ -1735,17 +1735,17 @@ function makeIcon(size){
   return cv.toDataURL('image/png');
 }
 function setupPWA(){
-  try{
-    const served = location.protocol==='http:'||location.protocol==='https:';
-    if(served){
-      // when hosted (e.g. GitHub Pages): use static files + real service worker → installable, offline
-      const ml=$('#manifestLink'); if(ml) ml.href='manifest.json';
-      const ti=$('#touchIcon'); if(ti) ti.href='icon-192.png';
-      const fi=$('#favIcon'); if(fi) fi.href='icon-192.png';
-      if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
-      return;
+  const served = location.protocol==='http:'||location.protocol==='https:';
+  if(served){
+    // HOSTED: the static <link rel="manifest" href="manifest.webmanifest"> + icons in <head> do the job.
+    // Do NOT touch them from JS (that can break installability). Just register the service worker.
+    if('serviceWorker' in navigator){
+      window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
     }
-    // opened as a local file (file://): build manifest + icons at runtime (no server needed)
+    return;
+  }
+  // LOCAL FILE (file://): manifest.webmanifest can't load, so build one at runtime + data-uri icons.
+  try{
     const i192=makeIcon(192), i512=makeIcon(512);
     const manifest={
       name:'FitPlan — Διατροφή & Γυμναστική', short_name:'FitPlan',
