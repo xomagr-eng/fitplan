@@ -304,8 +304,21 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
       </div>
     </div>
 
+    <div style="margin-top:14px">
+      <label class="field">🏋️ Είδος γυμναστικής</label>
+      <select id="workoutStyle">
+        <option value="strength">💪 Δύναμη / Μυϊκή (βάρη ή σώμα)</option>
+        <option value="calisthenics">🤸 Calisthenics (σωματικό βάρος)</option>
+        <option value="pilates">🧘 Pilates</option>
+        <option value="yoga">🕉️ Yoga</option>
+        <option value="crossfit">🔥 CrossFit / HIIT</option>
+        <option value="cardio">🏃 Cardio / Αντοχή</option>
+        <option value="mobility">🧎 Κινητικότητα & Διατάσεις</option>
+      </select>
+    </div>
+
     <div class="grid g3" style="margin-top:14px">
-      <div>
+      <div id="placeWrap">
         <label class="field">Χώρος προπόνησης</label>
         <div class="seg" id="placeSeg">
           <button data-v="gym" class="active">🏋️ Γυμναστήριο</button>
@@ -590,6 +603,9 @@ $('#colorBtn').addEventListener('click',()=>{
 const healthSel = new Set();
 function updateFastRow(){ const r=$('#fishRow'); if(r) r.style.display = $('#fastChk').checked ? 'flex' : 'none'; }
 $('#fastChk').addEventListener('change',updateFastRow);
+function updateStyleUI(){ const pw=$('#placeWrap'); if(pw) pw.style.display = ($('#workoutStyle').value==='strength')?'block':'none'; }
+$('#workoutStyle').addEventListener('change',updateStyleUI);
+updateStyleUI();
 $$('#healthChips button').forEach(b=>b.addEventListener('click',()=>{
   const h=b.dataset.h;
   if(healthSel.has(h)){ healthSel.delete(h); b.classList.remove('active'); }
@@ -1213,21 +1229,79 @@ function dayPlan(kind, place){
   }
 }
 
-function buildWorkout(days, place, goal, exp){
+/* ===== Άλλα είδη γυμναστικής (Pilates/Yoga/CrossFit/Calisthenics/Cardio/Mobility) ===== */
+const WORKOUTS = {
+  pilates:{icon:'🧘',label:'Pilates',note:'Στρώμα (mat) — αργές, ελεγχόμενες κινήσεις με βαθιά αναπνοή & σταθερό κορμό. 2-4 φορές/εβδομάδα.',sessions:[
+    {title:'Πυρήνας (Core)',items:[['The Hundred','100 παλμοί (10×10)','σταθερός κορμός & αναπνοή'],['Roll Up','×8','αργό ξετύλιγμα σπονδύλων'],['Single Leg Stretch','×10/πλευρά','κάτω κοιλιακοί'],['Double Leg Stretch','×10','συντονισμός'],['Criss-Cross','×12','πλάγιοι κοιλιακοί'],['Plank','30-45″','ουδέτερη λεκάνη']]},
+    {title:'Λεκάνη & γοφοί',items:[['Leg Circles','×8/πλευρά','κινητικότητα ισχίου'],['Scissors','×12','κάτω κοιλιακοί'],['Shoulder Bridge','×12','γλουτοί'],['Clam','×15/πλευρά','μέσος γλουτός'],['Side Plank','30″/πλευρά','πλάγιος κορμός']]},
+    {title:'Πλάτη & στάση σώματος',items:[['Swan / Swimming','×10','ραχιαίοι'],['Bird Dog','×10/πλευρά','σταθερότητα'],['Spine Stretch','×8','ευλυγισία'],['Saw','×8','στροφή & τέντωμα'],['Cat-Cow','×10','κινητικότητα σπονδύλων']]},
+    {title:'Ολόσωμο Flow',items:[['Roll Like a Ball','×8','έλεγχος'],['Teaser','×6','δύναμη κορμού'],['Single Leg Kick','×10/πλευρά','οπ. μηριαίοι'],['Plank → Pike','×8','ώμοι/κορμός'],['Mermaid Stretch','×5/πλευρά','πλάγιο τέντωμα']]},
+    {title:'Ευλυγισία & έλεγχος',items:[['Spine Twist','×8','στροφή κορμού'],['Roll Down','×6','κινητικότητα'],['Swan Dive','×6','άνοιγμα θώρακα'],['Standing Balance','30″/πόδι','ισορροπία'],['Αναπνοές χαλάρωσης','2′','έλεγχος αναπνοής']]}
+  ]},
+  yoga:{icon:'🕉️',label:'Yoga',note:'Στρώμα — συγχρόνισε κίνηση με αναπνοή. Κράτα κάθε στάση όσο αντέχεις άνετα. Ξυπόλυτος/η.',sessions:[
+    {title:'Χαιρετισμός Ηλίου Α (Surya A) ×5',items:[['Tadasana (Όρος)','3-5 αναπνοές','στάση/κέντρο'],['Uttanasana (Εμπρός κάμψη)','3 αναπνοές','οπ. μηριαίοι'],['Ardha Uttanasana (Ημι-κάμψη)','1 αναπνοή','ίσια πλάτη'],['Chaturanga (Χαμηλή σανίδα)','1 αναπνοή','δύναμη'],['Urdhva Mukha (Σκύλος πάνω)','1 αναπνοή','άνοιγμα θώρακα'],['Adho Mukha (Σκύλος κάτω)','5 αναπνοές','ολόσωμο τέντωμα']]},
+    {title:'Surya B + Πολεμιστές',items:[['Utkatasana (Καρέκλα)','5 αναπνοές','πόδια'],['Virabhadrasana I (Πολεμιστής Α)','5/πλευρά','ισχία & δύναμη'],['Virabhadrasana II (Πολεμιστής Β)','5/πλευρά','σταθερότητα'],['Σκύλος κάτω','5 αναπνοές','μετάβαση'],['Επανάληψη','3-5 γύροι','ροή με αναπνοή']]},
+    {title:'Ισορροπία',items:[['Vrksasana (Δέντρο)','30″/πόδι','ισορροπία'],['Virabhadrasana III (Πολεμιστής Γ)','20″/πλευρά','σταθερότητα'],['Garudasana (Αετός)','20″/πλευρά','εστίαση'],['Ardha Chandrasana (Ημισέληνος)','20″/πλευρά','ισορροπία & άνοιγμα']]},
+    {title:'Ευλυγισία & ανοίγματα',items:[['Trikonasana (Τρίγωνο)','5/πλευρά','πλάγιο άνοιγμα'],['Parsvakonasana (Πλάγια γωνία)','5/πλευρά','ισχία'],['Eka Pada (Περιστέρι)','1′/πλευρά','βαθύ άνοιγμα ισχίου'],['Paschimottanasana (Καθιστή κάμψη)','1′','οπίσθια αλυσίδα']]},
+    {title:'Χαλάρωση (Restorative)',items:[['Balasana (Παιδί)','1′','χαλάρωση'],['Marjaryasana (Γάτα-Αγελάδα)','×10','σπόνδυλοι'],['Supta Twist (Ύπτια στροφή)','45″/πλευρά','μέση'],['Viparita Karani (Πόδια στον τοίχο)','2′','αποκατάσταση'],['Savasana (Νεκρή στάση)','3-5′','βαθιά χαλάρωση']]}
+  ]},
+  crossfit:{icon:'🔥',label:'CrossFit / HIIT',note:'Υψηλή ένταση. Κάνε ζέσταμα 8-10′ πρώτα. Κράτα καλή τεχνική — σκάλωσε (scale) όσο χρειάζεται.',sessions:[
+    {title:'«Cindy» — AMRAP 20′',focus:'Όσο περισσότερους γύρους σε 20 λεπτά',items:[['Έλξεις (pull-ups)','5','ή ανάποδες κωπηλατικές'],['Push-ups (κάμψεις)','10','στήθος/τρικέφαλοι'],['Air Squats (καθίσματα)','15','πόδια/γλουτοί']]},
+    {title:'Tabata Full Body',focus:'8 γύροι × (20″ έργο / 10″ ξεκούραση) ανά άσκηση',items:[['Burpees','20″ max','ολόσωμο'],['Air Squats','20″ max','πόδια'],['Mountain Climbers','20″ max','κορμός/καρδιο'],['Push-ups','20″ max','άνω σώμα']]},
+    {title:'EMOM 16′ (κάθε λεπτό)',focus:'Στην αρχή κάθε λεπτού· ξεκουράσου τον υπόλοιπο χρόνο',items:[['Λεπτά 1,3,5…: Kettlebell/μπουκάλι Swings','12','γλουτοί/ώμοι'],['Λεπτά 2,4,6…: Burpees','10','ολόσωμο']]},
+    {title:'«Fran» style — 21-15-9 For Time',focus:'21 μετά 15 μετά 9 επαναλήψεις, όσο πιο γρήγορα με σωστή τεχνική',items:[['Thrusters (κάθισμα + ώθηση)','21-15-9','πόδια/ώμοι'],['Έλξεις ή Push-ups','21-15-9','άνω σώμα']]},
+    {title:'HIIT Καρδιο 20′',focus:'40″ έργο / 20″ ξεκούραση · 2 γύροι',items:[['Jumping Jacks','40″','καρδιο'],['High Knees','40″','καρδιο'],['Skaters','40″','πλάγια/ισορροπία'],['Jump Squats','40″','πόδια'],['Plank Jacks','40″','κορμός']]},
+    {title:'AMRAP 12′ Δύναμη + Καρδιο',focus:'Όσο περισσότερους γύρους σε 12 λεπτά',items:[['Προβολές (lunges)','10','πόδια'],['Push-ups','8','στήθος'],['Burpees','6','ολόσωμο'],['Σχοινάκι/τρέξιμο','30″','καρδιο']]}
+  ]},
+  calisthenics:{icon:'🤸',label:'Calisthenics (σωματικό βάρος)',note:'Χωρίς εξοπλισμό. Πρόοδος: κάνε πιο δύσκολη παραλλαγή ή +επαναλήψεις κάθε εβδομάδα.',sessions:[
+    {title:'Ώθηση (Push)',items:[['Push-ups','3×max','στήθος/τρικέφαλοι'],['Pike Push-ups','3×8-12','ώμοι'],['Dips σε καρέκλα','3×10','τρικέφαλοι'],['Diamond Push-ups','2×8','τρικέφαλοι'],['Plank','3×40″','κορμός']]},
+    {title:'Έλξη (Pull)',items:[['Έλξεις ή αρνητικές','3×max','πλάτη/δικέφαλοι'],['Australian Rows (τραπέζι/λάστιχο)','3×10','πλάτη'],['Superman','3×12','ραχιαίοι'],['Hollow Hold','3×30″','κορμός']]},
+    {title:'Πόδια',items:[['Air Squats','3×20','τετρακέφαλοι/γλουτοί'],['Προβολές','3×12/πόδι','γλουτοί'],['Bulgarian Split Squat','3×10/πόδι','πόδια'],['Wall Sit','3×45″','τετρακέφαλοι'],['Άλματα καθίσματος','3×12','εκρηκτικότητα']]},
+    {title:'Κορμός (Core)',items:[['Hollow Hold','3×30″','κοιλιακοί'],['Leg Raises','3×12','κάτω κοιλιακοί'],['Plank','3×45″','σταθερότητα'],['Side Plank','3×30″/πλευρά','πλάγιοι'],['Bicycle Crunches','3×20','κοιλιακοί']]},
+    {title:'Δεξιότητες & Ολόσωμο',items:[['Burpees','3×10','ολόσωμο'],['Handstand στον τοίχο','3×20″','ισορροπία/ώμοι'],['Pistol Squat (πρόοδος)','3×5/πόδι','πόδια/ισορροπία'],['Plank → Pike','3×8','κορμός/ώμοι'],['L-sit (πρόοδος)','3×15″','κορμός']]}
+  ]},
+  cardio:{icon:'🏃',label:'Cardio / Αντοχή',note:'Ιδανικό για απώλεια λίπους & υγεία καρδιάς. Φόρα καλά παπούτσια, ενυδατώσου.',sessions:[
+    {title:'Ίντερβαλ τρέξιμο',items:[['Ζέσταμα χαλαρό','5′','χαμηλή ένταση'],['1′ γρήγορο / 1′ χαλαρό','×8','εναλλαγή έντασης'],['Αποθεραπεία','5′','επαναφορά']]},
+    {title:'Σταθερή αντοχή (steady)',items:[['Τρέξιμο/ποδήλατο/κολύμπι','30-40′','μέτρια (να μπορείς να μιλάς)']]},
+    {title:'Σχοινάκι HIIT',items:[['Σχοινάκι','30″','ή jumping jacks χωρίς σχοινί'],['Ξεκούραση','30″','×10 γύροι']]},
+    {title:'Περπάτημα + λόφοι',items:[['Γρήγορο περπάτημα με ανηφόρες','45′','ένταση 6-7/10']]}
+  ]},
+  mobility:{icon:'🧎',label:'Κινητικότητα & Διατάσεις',note:'Για ευλυγισία, αποκατάσταση & πρόληψη τραυματισμών. Χωρίς πόνο — μόνο ήπιο τράβηγμα.',sessions:[
+    {title:'Δυναμική προθέρμανση',items:[['Leg Swings','×10/πόδι','ισχία'],['Arm Circles','×15','ώμοι'],['Hip Openers','×8/πλευρά','ισχία'],['Cat-Cow','×10','σπόνδυλοι'],["World's Greatest Stretch",'×5/πλευρά','ολόσωμο']]},
+    {title:'Κάτω σώμα (στατικές)',items:[['Οπ. μηριαίοι','30″/πόδι','τέντωμα'],['Τετρακέφαλοι','30″/πόδι','τέντωμα'],['Καμπτήρες ισχίου','30″/πλευρά','ισχία'],['Περιστέρι (γλουτοί)','45″/πλευρά','βαθύ άνοιγμα'],['Γάμπες','30″/πόδι','τέντωμα']]},
+    {title:'Άνω σώμα',items:[['Στήθος (σε πόρτα)','30″','άνοιγμα θώρακα'],['Ώμοι (cross-body)','30″/πλευρά','ώμοι'],['Τρικέφαλοι','30″/πλευρά','βραχίονες'],['Αυχένας','20″/πλευρά','τραχηλική'],['Θωρακική στροφή','×8/πλευρά','πλάτη']]},
+    {title:'Foam rolling & αποκατάσταση',items:[['Τετρακέφαλοι','45″/πόδι','μυϊκή χαλάρωση'],['IT band','45″/πλευρά','πλάγιο μηρού'],['Πλάτη','60″','ραχιαίοι'],['Γλουτοί','45″/πλευρά','γλουτοί'],['Γάμπες','45″/πόδι','γάμπες']]}
+  ]}
+};
+function buildStyleWorkout(style, days){
+  const W=WORKOUTS[style], sess=W.sessions;
+  let html=`<div class="note">${W.icon} <b>${W.label}:</b> ${W.note}</div>`;
+  const titles=[];
+  for(let i=0;i<days;i++){
+    const s=sess[i%sess.length]; titles.push(s.title);
+    const rows=s.items.map(e=>`<div class="ex"><div><div class="name">${e[0]}</div><div class="musc">${e[2]||''}</div></div><div class="sr">${e[1]}</div></div>`).join('');
+    html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${s.title}</h3>${s.focus?`<div class="wk"><span>🎯 ${s.focus}</span></div>`:''}<div style="margin-top:8px">${rows}</div></div>`;
+  }
+  html+=`<div class="note">🔥 <b>Ζέσταμα</b> 5-10′ πριν & <b>χαλάρωση/διατάσεις</b> 5′ μετά. Ποιότητα κίνησης > ποσότητα.</div>`;
+  return {html, plan:titles};
+}
+
+function buildWorkout(days, place, goal, exp, style){
+  if(style && style!=='strength' && WORKOUTS[style]) return buildStyleWorkout(style, days);
   const splits={
     3:['FB','FBb','FBc'],
     4:['Upper','Lower','Upper','Lower'],
     5:['Push','Pull','Legs','Upper','Lower'],
     6:['Push','Pull','Legs','Push','Pull','Legs']
   };
-  const plan=splits[days];
+  const keys=splits[days];
   const sr=setsReps(goal,exp);
   const cardio = goal==='lose'?'20-30′ καρδιο (γρήγορο περπάτημα/ποδήλατο) μετά την προπόνηση ή σε ημέρα ξεκούρασης.':
                  goal==='gain'?'Προαιρετικό ελαφρύ καρδιο 10-15′ για προθέρμανση.':
                  '15-20′ καρδιο 2-3 φορές/εβδομάδα για την υγεία της καρδιάς.';
-  let html='';
-  plan.forEach((k,i)=>{
-    const dp=dayPlan(k,place);
+  let html='', plan=[];
+  keys.forEach((k,i)=>{
+    const dp=dayPlan(k,place); plan.push(dp.title);
     let rows='';
     dp.ex.forEach(e=>{
       rows+=`<div class="ex"><div><div class="name">${e.name}</div><div class="musc">${e.musc}</div></div>
@@ -1250,11 +1324,10 @@ function buildWeek(days, plan){
     3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5]
   };
   const trainDays=schedules[days];
-  const titleFor=k=>dayPlan(k,'gym').title;
   let rows='';
   for(let i=0;i<7;i++){
     const ti=trainDays.indexOf(i);
-    const w = ti>=0 ? `💪 Προπόνηση ${ti+1}: ${titleFor(plan[ti])}` : '🧘 Ξεκούραση / ενεργή αποκατάσταση (περπάτημα)';
+    const w = ti>=0 ? `💪 Προπόνηση ${ti+1}: ${plan[ti]}` : '🧘 Ξεκούραση / ενεργή αποκατάσταση (περπάτημα)';
     rows+=`<tr><td><b>${dn[i]}</b></td><td>${w}</td><td>🍽️ Πλάνο διατροφής ημέρας ${i+1}</td></tr>`;
   }
   return `<table><thead><tr><th>Ημέρα</th><th>Γυμναστική</th><th>Διατροφή</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -1366,10 +1439,16 @@ function render(){
   $('#shopOut').innerHTML=buildShopping(c,opts,shopPeople);
 
   // workout
-  const wo=buildWorkout(days,state.place,state.goal,state.exp);
-  const placeName=state.place==='gym'?'γυμναστήριο':'σπίτι (χωρίς εξοπλισμό/με λάστιχα)';
-  const splitName={3:'Full Body ×3',4:'Upper/Lower ×2',5:'Push/Pull/Legs + Upper/Lower',6:'Push/Pull/Legs ×2'}[days];
-  $('#woNote').innerHTML=`Χώρος: <b>${placeName}</b> · ${days} ημέρες/εβδομάδα · Διάσπαση: <b>${splitName}</b>. Κάθε μυϊκή ομάδα ~2×/εβδομάδα για βέλτιστη ανάπτυξη.`;
+  const style=$('#workoutStyle').value;
+  const wo=buildWorkout(days,state.place,state.goal,state.exp,style);
+  if(style==='strength'){
+    const placeName=state.place==='gym'?'γυμναστήριο':'σπίτι (χωρίς εξοπλισμό/με λάστιχα)';
+    const splitName={3:'Full Body ×3',4:'Upper/Lower ×2',5:'Push/Pull/Legs + Upper/Lower',6:'Push/Pull/Legs ×2'}[days];
+    $('#woNote').innerHTML=`💪 <b>Δύναμη/Μυϊκή</b> · Χώρος: <b>${placeName}</b> · ${days} ημέρες/εβδομάδα · Διάσπαση: <b>${splitName}</b>. Κάθε μυϊκή ομάδα ~2×/εβδομάδα.`;
+  } else {
+    const W=WORKOUTS[style];
+    $('#woNote').innerHTML=`${W.icon} <b>${W.label}</b> · ${days} ημέρες/εβδομάδα · ${days} διαφορετικές προπονήσεις που εναλλάσσονται.`;
+  }
   $('#woOut').innerHTML=wo.html;
 
   // week
@@ -1405,7 +1484,7 @@ function collectInputs(){
     mNeck:$('#mNeck').value, mWaist:$('#mWaist').value, mHip:$('#mHip').value,
     mChest:$('#mChest').value, mArm:$('#mArm').value, mThigh:$('#mThigh').value,
     fast:$('#fastChk').checked, fishDay:$('#fishChk').checked, budget:$('#budgetChk').checked,
-    health:[...healthSel], ...state
+    health:[...healthSel], workoutStyle:$('#workoutStyle').value, ...state
   };
 }
 function applyInputs(d){
@@ -1418,6 +1497,7 @@ function applyInputs(d){
   if('fast' in d){ $('#fastChk').checked=!!d.fast; $('#fishChk').checked=!!d.fishDay; updateFastRow(); }
   if('budget' in d) $('#budgetChk').checked=!!d.budget;
   if(Array.isArray(d.health)){ healthSel.clear(); d.health.forEach(h=>healthSel.add(h)); $$('#healthChips button').forEach(b=>b.classList.toggle('active',healthSel.has(b.dataset.h))); }
+  if(d.workoutStyle){ $('#workoutStyle').value=d.workoutStyle; updateStyleUI(); }
   const setSeg=(id,key,val)=>{$$('#'+id+' button').forEach(b=>{
     const bv = id==='actSeg'?parseFloat(b.dataset.v):b.dataset.v;
     const on = bv==val; b.classList.toggle('active',on); if(on) state[key]=bv;
