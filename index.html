@@ -403,6 +403,7 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
           </select>
           <span class="hint">πολλαπλασιάζει τα υλικά κάθε συνταγής</span>
         </div>
+        <div id="favSection"></div>
         <details style="margin-bottom:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px">
           <summary style="cursor:pointer;font-weight:600">🧊 Τι έχω στο ψυγείο; — βρες γεύμα από ό,τι έχεις</summary>
           <div style="margin-top:10px">
@@ -629,6 +630,7 @@ $('#fridgeBtn').addEventListener('click',findFridgeMeals);
 $('#recipeServSel').addEventListener('change',e=>{
   recipeServings=parseInt(e.target.value)||1;
   if(window.__dietC) $('#dietOut').innerHTML=buildDiet(window.__dietC, window.__dietOpts);
+  renderFavs();
 });
 
 // auto-detect today's fasting period (Ορθόδοξο ημερολόγιο)
@@ -987,17 +989,53 @@ function recipeDiff(r,name){
   const sc=(s>=5?2:s>=3?1:0)+(t>=45?2:t>=20?1:0);
   return sc>=3?['Δύσκολο','🔴']:sc>=1?['Μέτριο','🟡']:['Εύκολο','🟢'];
 }
+let favRecipes = (function(){ try{ return new Set(JSON.parse(localStorage.getItem('fitplan_fav_recipes'))||[]); }catch(e){ return new Set(); } })();
+function saveFavs(){ try{ localStorage.setItem('fitplan_fav_recipes', JSON.stringify([...favRecipes])); }catch(e){} }
 function recipeHtml(name){
   const r=RECIPES[name]; if(!r) return '';
-  const t=RTIME[name]||10, df=recipeDiff(r,name);
+  const t=RTIME[name]||10, df=recipeDiff(r,name), enc=encodeURIComponent(name);
   const svTxt = recipeServings>1?(recipeServings+' μερίδες'):'1 μερίδα';
   const ings = r.ing.map(x=>scaleIng(x,recipeServings)).join(' · ');
-  return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.82rem;color:var(--brand);font-weight:600">📖 Συνταγή <span style="color:var(--muted);font-weight:400">· ⏱️ ${t}′ · ${df[1]} ${df[0]}</span></summary>
+  const fav = favRecipes.has(name);
+  return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.82rem;color:var(--brand);font-weight:600">📖 Συνταγή <span style="color:var(--muted);font-weight:400">· ⏱️ ${t}′ · ${df[1]} ${df[0]}${fav?' · ❤️':''}</span></summary>
     <div style="font-size:.84rem;margin-top:6px;background:var(--panel2);border-radius:8px;padding:8px 10px">
       <b>Υλικά (${svTxt}):</b> ${ings}
       <ol style="margin:6px 0 0;padding-left:20px">${r.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+      <div class="no-print" style="display:flex;gap:8px;margin-top:8px">
+        <button type="button" data-fav="${enc}" class="btn-ghost" style="padding:3px 10px;font-size:.8rem">${fav?'❤️ Αγαπημένη':'🤍 Αγαπημένη'}</button>
+        <button type="button" data-printrec="${enc}" class="btn-ghost" style="padding:3px 10px;font-size:.8rem">🖨️ Εκτύπωση</button>
+      </div>
     </div></details>`;
 }
+function printRecipe(name){
+  const r=RECIPES[name]; if(!r) return;
+  const t=RTIME[name]||10, df=recipeDiff(r,name), sv=recipeServings>1?(recipeServings+' μερίδες'):'1 μερίδα';
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const body=`<h2 style="color:#0f9e86;margin:0 0 4px">${esc(name)}</h2>
+    <p style="color:#555;margin:0 0 12px">⏱️ ${t}′ · Δυσκολία: ${df[0]}</p>
+    <h3 style="margin:0 0 4px">Υλικά (${sv})</h3><ul>${r.ing.map(i=>`<li>${esc(scaleIng(i,recipeServings))}</li>`).join('')}</ul>
+    <h3 style="margin:12px 0 4px">Εκτέλεση</h3><ol>${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    <p style="color:#999;font-size:12px;margin-top:16px">FitPlan · ${new Date().toLocaleDateString('el-GR')}</p>`;
+  const f=document.createElement('iframe'); f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f);
+  const d=f.contentWindow.document; d.open();
+  d.write('<html><head><title>'+esc(name)+'</title></head><body style="font:15px/1.6 system-ui,Arial,sans-serif;padding:22px">'+body+'</body></html>'); d.close();
+  f.contentWindow.focus(); setTimeout(()=>{ try{f.contentWindow.print();}catch(e){window.print();} setTimeout(()=>f.remove(),600); },250);
+}
+function renderFavs(){
+  const el=$('#favSection'); if(!el) return;
+  const names=[...favRecipes].filter(n=>RECIPES[n]);
+  el.innerHTML = names.length
+    ? `<details style="margin-bottom:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px"><summary style="cursor:pointer;font-weight:600">❤️ Αγαπημένες συνταγές (${names.length})</summary><div style="margin-top:8px">${names.map(recipeHtml).join('')}</div></details>`
+    : '';
+}
+document.addEventListener('click',e=>{
+  const fb=e.target.closest('[data-fav]');
+  if(fb){ const n=decodeURIComponent(fb.dataset.fav); if(favRecipes.has(n))favRecipes.delete(n); else favRecipes.add(n); saveFavs();
+    if(window.__dietC) $('#dietOut').innerHTML=buildDiet(window.__dietC,window.__dietOpts); renderFavs(); return; }
+  const pb=e.target.closest('[data-printrec]');
+  if(pb){ printRecipe(decodeURIComponent(pb.dataset.printrec)); return; }
+});
 const ING_CAT = {
   '🥩 Κρέας / Ψάρι / Αυγά':['Κοτόπουλο','Σολομός','Μοσχάρι','Γαλοπούλα','Τόνος (κονσέρβα)','Κιμάς κοτόπουλου','Ψάρι','Γαρίδες','Χταπόδι','Καλαμάρι','Αυγά','Τόφου'],
   '🍲 Όσπρια':['Φακές','Ρεβίθια','Φασόλια','Γίγαντες'],
@@ -1323,6 +1361,7 @@ function render(){
   $('#dietNote').innerHTML=dn;
   window.__dietC=c; window.__dietOpts=opts;
   $('#dietOut').innerHTML=buildDiet(c,opts);
+  renderFavs();
   // shopping list
   $('#shopOut').innerHTML=buildShopping(c,opts,shopPeople);
 
