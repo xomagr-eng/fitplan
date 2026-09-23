@@ -1229,6 +1229,59 @@ function dayPlan(kind, place){
   }
 }
 
+/* ===== Σκίτσα ασκήσεων (SVG ανά τύπο κίνησης) + YouTube «πώς γίνεται» ===== */
+const SVGCAT = {
+  squat:'<circle cx="16" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M16 9v7"/><path d="M16 16l-5 5v5M16 16l5 5v5"/><path d="M16 11l6 1"/>',
+  lunge:'<circle cx="15" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M15 9v8"/><path d="M15 17l-6 5v4M15 17l7 4 2 5"/><path d="M15 11l-4 4M15 11l4 3"/>',
+  pushup:'<circle cx="6" cy="13" r="3" fill="currentColor" stroke="none"/><path d="M9 15l17 -2"/><path d="M13 15v6M20 14v6"/><path d="M26 13l3 3"/>',
+  press:'<circle cx="16" cy="10" r="3" fill="currentColor" stroke="none"/><path d="M16 13v8"/><path d="M16 21l-4 6M16 21l4 6"/><path d="M16 14l-5 -4M16 14l5 -4"/><path d="M9 7h14"/>',
+  pull:'<path d="M5 6h22"/><circle cx="16" cy="13" r="3" fill="currentColor" stroke="none"/><path d="M11 6l4 5M21 6l-4 5"/><path d="M16 16v7"/><path d="M16 23l-3 4M16 23l3 4"/>',
+  curl:'<circle cx="14" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M14 9v10"/><path d="M14 19l-3 7M14 19l3 7"/><path d="M14 13l6 3l-2 -6"/>',
+  plank:'<circle cx="6" cy="15" r="3" fill="currentColor" stroke="none"/><path d="M9 16h18"/><path d="M9 16v6h4"/><path d="M27 16l2 5"/>',
+  core:'<circle cx="23" cy="13" r="3" fill="currentColor" stroke="none"/><path d="M21 15l-9 8"/><path d="M12 23h-4"/><path d="M12 23l5 -6l6 4"/><path d="M20 16l-4 2"/>',
+  bridge:'<circle cx="6" cy="24" r="2.6" fill="currentColor" stroke="none"/><path d="M8 24 Q16 12 23 24"/><path d="M23 24v4"/><path d="M9 24h3"/>',
+  hinge:'<circle cx="9" cy="10" r="3" fill="currentColor" stroke="none"/><path d="M12 12l10 3"/><path d="M22 15v11"/><path d="M13 13v10"/>',
+  jump:'<circle cx="16" cy="5" r="3" fill="currentColor" stroke="none"/><path d="M16 8v7"/><path d="M16 15l-4 6M16 15l4 6"/><path d="M16 10l-6 -4M16 10l6 -4"/>',
+  cardio:'<circle cx="17" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M17 9v6"/><path d="M17 15l-6 3l-1 7M17 15l5 6l4 2"/><path d="M17 11l5 -2M17 11l-5 4"/>',
+  stretch:'<circle cx="15" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M15 9c1 6 5 5 5 10"/><path d="M20 19v7"/><path d="M14 19v7"/><path d="M15 11c-4 -1 -6 -4 -6 -4"/>',
+  yoga:'<circle cx="16" cy="6" r="3" fill="currentColor" stroke="none"/><path d="M16 9v8"/><path d="M16 17l-6 4v5M16 17l6 -1v6"/><path d="M9 12h14"/>',
+  rest:'<circle cx="16" cy="7" r="3" fill="currentColor" stroke="none"/><path d="M16 10v9"/><path d="M16 19l-3 7M16 19l3 7"/><path d="M16 12l-4 5M16 12l4 5"/>',
+  dumbbell:'<path d="M8 16h16"/><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="24" y="12" width="4" height="8" rx="1"/>'
+};
+function exerciseCat(name){
+  const n=(name||'').toLowerCase();
+  const h=(...k)=>k.some(x=>n.includes(x));
+  if(h('utkatasana','καρέκλ')) return 'squat';
+  if(h('chaturanga','pike push','diamond','dips','push-up','push up','κάμψ')) return 'pushup';
+  if(h('κάθισμ','squat','wall sit','pistol')) return 'squat';
+  if(h('προβολ','lunge','split squat','bulgarian')) return 'lunge';
+  if(h('πιέσ','press','bench','thruster','overhead')) return 'press';
+  if(h('έλξ','pull','row','κωπηλατ','australian','lat')) return 'pull';
+  if(h('δικέφαλ','curl','σφυρ')) return 'curl';
+  if(h('plank','πλανκ','σανίδα','hollow','l-sit','bird dog')) return 'plank';
+  if(h('κοιλιακ','crunch','scissor','criss','leg raise','hundred','teaser','roll up','roll like','bicycle')) return 'core';
+  if(h('γέφυρ','bridge','γλουτ','clam','setu')) return 'bridge';
+  if(h('νεκρή','deadlift','ρουμαν','kettlebell','superman','swings')) return 'hinge';
+  if(h('burpee','άλμα','jump','box jump','plyo')) return 'jump';
+  if(h('τρέξ','τρέχ','run','ίντερβαλ','περπάτ','ποδήλατ','cardio','high knee','jumping jack','skater','mountain climber','σχοινάκι','rope','steady','αντοχ','ζέσταμα','κολύμ')) return 'cardio';
+  if(h('πολεμιστ','virabhadra','warrior','vrks','δέντρο','τρίγωνο','trikon','σκύλος','adho','downward','balasana','παιδί','savasana','αετός','garud','ημισέλην','surya','χαιρετισμ','tadasana','όρος','uttanasana','parsva','παρσβ','viparita')) return 'yoga';
+  if(h('διάτασ','τέντωμα','stretch','foam','κινητικ','circle','openers','cat-cow','γάτα','αγελάδα','περιστέρι','pigeon','mermaid','spine','saw','twist','στροφή','world','αναπν','swing','ισορροπ','balance','standing')) return 'stretch';
+  if(h('ξεκούρ','χαλάρ','rest')) return 'rest';
+  return 'dumbbell';
+}
+function exerciseSVG(cat){
+  return `<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">${SVGCAT[cat]||SVGCAT.dumbbell}</svg>`;
+}
+function ytLink(name){ return 'https://www.youtube.com/results?search_query='+encodeURIComponent(name+' σωστή τεχνική'); }
+function exRow(name, musc, srHtml){
+  return `<div class="ex">
+    <div style="display:flex;gap:10px;align-items:center;min-width:0">
+      <span style="flex:0 0 auto;color:var(--brand)">${exerciseSVG(exerciseCat(name))}</span>
+      <div style="min-width:0"><div class="name">${name} <a class="no-print" href="${ytLink(name)}" target="_blank" rel="noopener" title="Δες πώς γίνεται (YouTube)" style="text-decoration:none;font-size:.9em">▶️</a></div><div class="musc">${musc||''}</div></div>
+    </div>
+    <div class="sr">${srHtml}</div></div>`;
+}
+
 /* ===== Άλλα είδη γυμναστικής (Pilates/Yoga/CrossFit/Calisthenics/Cardio/Mobility) ===== */
 const WORKOUTS = {
   pilates:{icon:'🧘',label:'Pilates',note:'Στρώμα (mat) — αργές, ελεγχόμενες κινήσεις με βαθιά αναπνοή & σταθερό κορμό. 2-4 φορές/εβδομάδα.',sessions:[
@@ -1279,7 +1332,7 @@ function buildStyleWorkout(style, days){
   const titles=[];
   for(let i=0;i<days;i++){
     const s=sess[i%sess.length]; titles.push(s.title);
-    const rows=s.items.map(e=>`<div class="ex"><div><div class="name">${e[0]}</div><div class="musc">${e[2]||''}</div></div><div class="sr">${e[1]}</div></div>`).join('');
+    const rows=s.items.map(e=>exRow(e[0], e[2], e[1])).join('');
     html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${s.title}</h3>${s.focus?`<div class="wk"><span>🎯 ${s.focus}</span></div>`:''}<div style="margin-top:8px">${rows}</div></div>`;
   }
   html+=`<div class="note">🔥 <b>Ζέσταμα</b> 5-10′ πριν & <b>χαλάρωση/διατάσεις</b> 5′ μετά. Ποιότητα κίνησης > ποσότητα.</div>`;
@@ -1304,8 +1357,7 @@ function buildWorkout(days, place, goal, exp, style){
     const dp=dayPlan(k,place); plan.push(dp.title);
     let rows='';
     dp.ex.forEach(e=>{
-      rows+=`<div class="ex"><div><div class="name">${e.name}</div><div class="musc">${e.musc}</div></div>
-        <div class="sr">${sr.sets}×${sr.reps}<br><span style="color:var(--muted);font-weight:400">ξεκ. ${sr.rest}</span></div></div>`;
+      rows+=exRow(e.name, e.musc, `${sr.sets}×${sr.reps}<br><span style="color:var(--muted);font-weight:400">ξεκ. ${sr.rest}</span>`);
     });
     html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${dp.title}</h3>
       <div class="wk"><span>🎯 ${sr.sets} σετ × ${sr.reps} επαναλήψεις</span><span>⏱️ ξεκούραση ${sr.rest}</span></div>
