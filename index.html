@@ -396,6 +396,13 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
       <div class="tabpane show" id="tab-diet">
         <h2 class="section"><span class="ic">🍽️</span>Πρόγραμμα διατροφής</h2>
         <div class="note" id="dietNote"></div>
+        <div class="toolbar no-print" style="justify-content:flex-start;align-items:center;margin-bottom:10px">
+          <label style="font-size:.85rem;color:var(--muted)">👨‍🍳 Μερίδες συνταγής:</label>
+          <select id="recipeServSel" style="width:auto">
+            <option value="1">×1</option><option value="2">×2</option><option value="3">×3</option><option value="4">×4</option><option value="6">×6</option>
+          </select>
+          <span class="hint">πολλαπλασιάζει τα υλικά κάθε συνταγής</span>
+        </div>
         <details style="margin-bottom:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px">
           <summary style="cursor:pointer;font-weight:600">🧊 Τι έχω στο ψυγείο; — βρες γεύμα από ό,τι έχεις</summary>
           <div style="margin-top:10px">
@@ -619,6 +626,10 @@ function findFridgeMeals(){
   }).join('');
 }
 $('#fridgeBtn').addEventListener('click',findFridgeMeals);
+$('#recipeServSel').addEventListener('change',e=>{
+  recipeServings=parseInt(e.target.value)||1;
+  if(window.__dietC) $('#dietOut').innerHTML=buildDiet(window.__dietC, window.__dietOpts);
+});
 
 // auto-detect today's fasting period (Ορθόδοξο ημερολόγιο)
 (function(){
@@ -955,11 +966,35 @@ const RECIPES = {
   'Χούμους με πίτα & λαχανικά':{ing:['χούμους','1 πίτα','λαχανικά'],steps:['Ζέστανε την πίτα.','Σέρβιρε με χούμους & ωμά λαχανικά.']},
   'Καλαμαράκια με σαλάτα':{ing:['200g καλαμάρι','σαλάτα','ελαιόλαδο, λεμόνι'],steps:['Καθάρισε & ψήσε τα καλαμάρια στη σχάρα 3-4′.','Σέρβιρε με σαλάτα & λαδολέμονο.']}
 };
+// χρόνος μαγειρέματος (λεπτά) ανά συνταγή
+const RTIME = {
+  'Βρώμη με γάλα, μπανάνα & μέλι':6,'Ελληνικό γιαούρτι 2% με καρύδια & μέλι':3,'Ομελέτα 3 αυγά με λαχανικά & τοστ ολικής':10,'Τοστ ολικής με αβγό & τυρί χαμηλών λιπαρών':6,'Smoothie: γάλα, βρώμη, φρούτα & πρωτεΐνη':3,'Γιαούρτι με granola & μούρα':3,'Ψωμί ολικής με ταχίνι & φρούτο':3,'Βρώμη με ρόφημα σόγιας, μπανάνα & καρύδια':6,'Φρυγανιές ολικής με ταχίνι & μαρμελάδα':3,'Χαλβάς με ξηρούς καρπούς & φρούτο':2,
+  'Φρούτο εποχής & 15 αμύγδαλα':2,'Ελληνικό γιαούρτι με μέλι':2,'Μπάρα πρωτεΐνης':1,'Φρυγανιές ολικής με τυρί cottage':3,'Χούμους με λαχανικά (καρότο/αγγούρι)':5,'Μήλο με φυστικοβούτυρο':3,'Ξηροί καρποί ανάμεικτοι':1,'Ελιές & παξιμάδι':3,'Αποξηραμένα φρούτα & καρύδια':2,
+  'Κοτόπουλο σχάρας με ρύζι & σαλάτα':25,'Σολομός ψητός με πατάτα & μπρόκολο':25,'Φακές με ελαιόλαδο & ψωμί ολικής':40,'Μοσχάρι ισχνό με κριθαρότο λαχανικών':35,'Ρεβίθια στιφάδο με ρύζι':50,'Γαλοπούλα με γλυκοπατάτα & σαλάτα':30,'Τόνος με ζυμαρικά ολικής & ντομάτα':20,'Ομελέτα λαχανικών με πατάτες φούρνου & σαλάτα':30,'Μπιφτέκια κοτόπουλου φούρνου με μπουργκούλ':30,'Φασολάδα με ψωμί & ελιές':70,'Γίγαντες πλακί με ψωμί':60,'Αρακάς λαδερός με πατάτες & ψωμί':35,'Σπανακόρυζο με λεμόνι':30,'Χταπόδι με κοφτό μακαρονάκι':50,
+  'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο':25,'Σαλάτα με κοτόπουλο, αβοκάντο & ελαιόλαδο':15,'Αυγά ομελέτα με τυρί & σαλάτα εποχής':10,'Γιαούρτι υψηλής πρωτεΐνης με ξηρούς καρπούς & φρούτο':3,'Τυρί cottage με λαχανικά & ψωμί ολικής':5,'Φασολάκια λαδερά με φέτα & ψωμί':35,'Γαρίδες σαλάτα με κινόα':25,'Λαχανικά στον ατμό με τόφου & σόγια':20,'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι':10,'Μανιτάρια σοτέ με ρύζι':25,'Χούμους με πίτα & λαχανικά':5,'Καλαμαράκια με σαλάτα':15
+};
+let recipeServings = 1;
+function scaleIng(s,m){
+  if(m===1) return s;
+  return s.replace(/(\d+\/\d+|\d+(?:[.,]\d+)?)/, num=>{
+    let v; if(num.includes('/')){ const[a,b]=num.split('/'); v=(+a)/(+b); } else v=parseFloat(num.replace(',','.'));
+    let r=v*m; r=(Math.abs(r-Math.round(r))<0.06)?Math.round(r):+r.toFixed(1);
+    return String(r);
+  });
+}
+function recipeDiff(r,name){
+  const t=RTIME[name]||10, s=r.steps.length;
+  const sc=(s>=5?2:s>=3?1:0)+(t>=45?2:t>=20?1:0);
+  return sc>=3?['Δύσκολο','🔴']:sc>=1?['Μέτριο','🟡']:['Εύκολο','🟢'];
+}
 function recipeHtml(name){
   const r=RECIPES[name]; if(!r) return '';
-  return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.82rem;color:var(--brand);font-weight:600">📖 Συνταγή</summary>
+  const t=RTIME[name]||10, df=recipeDiff(r,name);
+  const svTxt = recipeServings>1?(recipeServings+' μερίδες'):'1 μερίδα';
+  const ings = r.ing.map(x=>scaleIng(x,recipeServings)).join(' · ');
+  return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.82rem;color:var(--brand);font-weight:600">📖 Συνταγή <span style="color:var(--muted);font-weight:400">· ⏱️ ${t}′ · ${df[1]} ${df[0]}</span></summary>
     <div style="font-size:.84rem;margin-top:6px;background:var(--panel2);border-radius:8px;padding:8px 10px">
-      <b>Υλικά (1 μερίδα):</b> ${r.ing.join(' · ')}
+      <b>Υλικά (${svTxt}):</b> ${ings}
       <ol style="margin:6px 0 0;padding-left:20px">${r.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
     </div></details>`;
 }
@@ -1286,6 +1321,7 @@ function render(){
     dn+=` <br>💶 <b>Οικονομικό:</b> εκτιμώμενο κόστος ~<b>${cost.toFixed(0)}€/εβδομάδα</b> (~${(cost/7).toFixed(1)}€/ημέρα) για 1 άτομο.`;
   }
   $('#dietNote').innerHTML=dn;
+  window.__dietC=c; window.__dietOpts=opts;
   $('#dietOut').innerHTML=buildDiet(c,opts);
   // shopping list
   $('#shopOut').innerHTML=buildShopping(c,opts,shopPeople);
