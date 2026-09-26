@@ -397,7 +397,8 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
 
     <div class="card">
       <div class="tabs no-print">
-        <button data-tab="diet" class="active">🍽️ Διατροφή (7 ημέρες)</button>
+        <button data-tab="today" class="active">🏠 Σήμερα</button>
+        <button data-tab="diet">🍽️ Διατροφή (7 ημέρες)</button>
         <button data-tab="shop">🛒 Λίστα αγορών</button>
         <button data-tab="workout">💪 Γυμναστική</button>
         <button data-tab="week">🗓️ Εβδομαδιαίο πλάνο</button>
@@ -406,7 +407,11 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
         <button data-tab="tips">💡 Συμβουλές</button>
       </div>
 
-      <div class="tabpane show" id="tab-diet">
+      <div class="tabpane show" id="tab-today">
+        <div id="todayOut"></div>
+      </div>
+
+      <div class="tabpane" id="tab-diet">
         <h2 class="section"><span class="ic">🍽️</span>Πρόγραμμα διατροφής</h2>
         <div class="note" id="dietNote"></div>
         <div class="toolbar no-print" style="justify-content:flex-start;align-items:center;margin-bottom:10px">
@@ -1329,14 +1334,15 @@ const WORKOUTS = {
 function buildStyleWorkout(style, days){
   const W=WORKOUTS[style], sess=W.sessions;
   let html=`<div class="note">${W.icon} <b>${W.label}:</b> ${W.note}</div>`;
-  const titles=[];
+  const titles=[], sessions=[];
   for(let i=0;i<days;i++){
     const s=sess[i%sess.length]; titles.push(s.title);
     const rows=s.items.map(e=>exRow(e[0], e[2], e[1])).join('');
+    sessions.push({title:s.title, rows});
     html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${s.title}</h3>${s.focus?`<div class="wk"><span>🎯 ${s.focus}</span></div>`:''}<div style="margin-top:8px">${rows}</div></div>`;
   }
   html+=`<div class="note">🔥 <b>Ζέσταμα</b> 5-10′ πριν & <b>χαλάρωση/διατάσεις</b> 5′ μετά. Ποιότητα κίνησης > ποσότητα.</div>`;
-  return {html, plan:titles};
+  return {html, plan:titles, sessions};
 }
 
 function buildWorkout(days, place, goal, exp, style){
@@ -1352,20 +1358,21 @@ function buildWorkout(days, place, goal, exp, style){
   const cardio = goal==='lose'?'20-30′ καρδιο (γρήγορο περπάτημα/ποδήλατο) μετά την προπόνηση ή σε ημέρα ξεκούρασης.':
                  goal==='gain'?'Προαιρετικό ελαφρύ καρδιο 10-15′ για προθέρμανση.':
                  '15-20′ καρδιο 2-3 φορές/εβδομάδα για την υγεία της καρδιάς.';
-  let html='', plan=[];
+  let html='', plan=[], sessions=[];
   keys.forEach((k,i)=>{
     const dp=dayPlan(k,place); plan.push(dp.title);
     let rows='';
     dp.ex.forEach(e=>{
       rows+=exRow(e.name, e.musc, `${sr.sets}×${sr.reps}<br><span style="color:var(--muted);font-weight:400">ξεκ. ${sr.rest}</span>`);
     });
+    sessions.push({title:dp.title, rows});
     html+=`<div class="day"><h3>Προπόνηση ${i+1} — ${dp.title}</h3>
       <div class="wk"><span>🎯 ${sr.sets} σετ × ${sr.reps} επαναλήψεις</span><span>⏱️ ξεκούραση ${sr.rest}</span></div>
       <div style="margin-top:8px">${rows}</div></div>`;
   });
   html+=`<div class="note">🏃 <b>Καρδιαγγειακή:</b> ${cardio}</div>`;
   html+=`<div class="note">🔥 <b>Προθέρμανση</b> 5-10′ πριν & <b>διατάσεις</b> 5′ μετά. Κάθε 2-3 εβδομάδες αύξησε ελαφρώς βάρος ή επαναλήψεις (προοδευτική υπερφόρτωση).</div>`;
-  return {html, plan};
+  return {html, plan, sessions};
 }
 
 /* ================= WEEKLY PLAN ================= */
@@ -1405,6 +1412,72 @@ function buildTips(c){
     <li><b>📏 Μεζούρα κάθε 2-4 εβδομάδες:</b> η περίμετρος μέσης πέφτει συχνά και όταν η ζυγαριά «κολλάει» — είναι καλύτερος δείκτης προόδου από το βάρος μόνο. Μέτρα πρωί, νηστικός/-ή.</li>
   </ul>
   <div class="note">📌 Επανυπολόγισε τις θερμίδες & ξαναπάρε μετρήσεις κάθε 4-6 εβδομάδες ή ανά ~4-5 kg αλλαγής βάρους, γιατί το TDEE και η άλιπη μάζα μεταβάλλονται.</div>`;
+}
+
+/* ================= «ΣΗΜΕΡΑ» (καθημερινός πίνακας) ================= */
+const QUOTES=[
+  'Κάθε μέρα που ξεκινάς είναι μια νίκη. 💪','Η συνέπεια νικά την τελειότητα.','Μικρά βήματα, μεγάλες αλλαγές.',
+  'Το σώμα πετυχαίνει ό,τι πιστεύει το μυαλό.','Δεν χρειάζεται να είσαι τέλειος — απλώς καλύτερος από χθες.',
+  'Η υγεία είναι το καλύτερο δώρο στον εαυτό σου.','Πίεσε λίγο παραπάνω σήμερα — θα σε ευχαριστήσει το αύριο.',
+  'Φάε καλά, κινήσου, κοιμήσου. Επανάλαβε.','Πρόοδος, όχι τελειότητα.','Ένα ποτήρι νερό τη φορά. 💧',
+  'Η πειθαρχία είναι να επιλέγεις αυτό που θέλεις πραγματικά, αντί για αυτό που θες τώρα.','Ξεκίνα εκεί που είσαι. Χρησιμοποίησε ό,τι έχεις. Κάνε ό,τι μπορείς.'
+];
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false}; return p.daily[k]; }
+function greetTime(){ const h=new Date().getHours(); return h<12?'Καλημέρα':h<18?'Καλησπέρα':'Καλό βράδυ'; }
+function adherence(d){ return Math.round(((d.meals||[]).filter(Boolean).length+(d.workout?1:0))/6*100); }
+function dayOfYear(dt){ return Math.floor((dt-new Date(dt.getFullYear(),0,0))/86400000); }
+function calcStreak(){
+  const dd=curProfile().daily||{}; const act=e=>e&&(e.water>0||(e.meals||[]).some(Boolean)||e.workout);
+  let s=0, d=new Date();
+  if(!act(dd[todayKey()])) d.setDate(d.getDate()-1);
+  for(let i=0;i<400;i++){ const k=d.toISOString().slice(0,10); if(act(dd[k])){ s++; d.setDate(d.getDate()-1); } else break; }
+  return s;
+}
+function renderToday(){
+  const el=$('#todayOut'); if(!el) return;
+  const P=window.__plan;
+  if(!P){ el.innerHTML='<div class="note" style="text-align:center;padding:24px">👋 Καλώς ήρθες! Πάτησε <b>«⚙️ Δημιουργία προγράμματος»</b> για να δεις τον σημερινό σου πίνακα.</div>'; return; }
+  const day=getDaily();
+  const nm=(curProfile().inputs&&curProfile().inputs.name)||'';
+  const now=new Date(), idx=(now.getDay()+6)%7, dnames=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
+  const streak=calcStreak();
+  const quote=QUOTES[(now.getFullYear()*366+dayOfYear(now))%QUOTES.length];
+  let html=`<div class="card" style="margin:0 0 14px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#03222b;border:none">
+    <div style="font-size:1.25rem;font-weight:700">${greetTime()}${nm?', '+nm:''}! 👋</div>
+    <div style="opacity:.85;font-size:.9rem">${dnames[idx]} · ${now.toLocaleDateString('el-GR')}</div>
+    <div style="margin-top:8px;font-style:italic">«${quote}»</div>
+    <div style="margin-top:10px;font-weight:700">🔥 Σερί συνέπειας: ${streak} ${streak===1?'μέρα':'μέρες'}${streak>=3?' — μπράβο!':''}</div>
+  </div>`;
+  // water
+  const wT=Math.max(6,Math.round((P.c.water||2)/0.25));
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">💧 Νερό — ${day.water}/${wT} ποτήρια <span class="hint">(${(day.water*0.25).toFixed(2)}L / ${(P.c.water||2).toFixed(1)}L)</span></div>
+    <div id="waterGlasses" style="display:flex;gap:5px;flex-wrap:wrap;font-size:1.7rem">${Array.from({length:wT},(_,i)=>`<span data-water="${i}" style="cursor:pointer">${i<day.water?'💧':'🥛'}</span>`).join('')}</div></div>`;
+  // meals
+  const meals=weekMeals(P.opts)[idx], labels=['Πρωινό','Δεκατιανό','Μεσημεριανό','Απογευματινό','Βραδινό'];
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">🍽️ Σημερινά γεύματα — <span id="adher">${adherence(day)}%</span> ✓</div>`;
+  meals.forEach((m,i)=>{ const kc=Math.round(P.c.target*m.share);
+    html+=`<label class="meal" style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" data-meal="${i}" ${day.meals[i]?'checked':''} style="width:auto;flex:0 0 auto"> <span><span class="mt">${labels[i]} · ~${kc} kcal</span><br><span class="mn" style="${day.meals[i]?'text-decoration:line-through;opacity:.6':''}">${m.f.n}</span></span></label>`;
+  });
+  html+=`</div>`;
+  // workout
+  const sched={3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]}[P.days]||[], ti=sched.indexOf(idx);
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">💪 Σημερινή προπόνηση</div>`;
+  if(ti>=0 && P.wo.sessions && P.wo.sessions[ti]){
+    html+=`<div style="font-weight:600;color:var(--brand);margin-bottom:6px">${P.wo.sessions[ti].title}</div>${P.wo.sessions[ti].rows}
+      <label class="no-print" style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-top:10px"><input type="checkbox" id="woDone" ${day.workout?'checked':''} style="width:auto;flex:0 0 auto"> <b>Ολοκληρώθηκε ✅</b></label>`;
+  } else {
+    html+=`<div class="note">🧘 Μέρα ξεκούρασης / ενεργής αποκατάστασης — χαλαρό περπάτημα & διατάσεις.</div>`;
+  }
+  html+=`</div>`;
+  // quick weigh-in
+  html+=`<div class="card no-print" style="margin:0"><div style="font-weight:600;margin-bottom:8px">⚖️ Γρήγορο ζύγισμα</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="todayWeight" type="number" step="0.1" placeholder="kg" style="width:130px"><button class="btn-primary" id="todayWeighBtn">Καταγραφή</button><span class="hint">→ Πρόοδος</span></div></div>`;
+  el.innerHTML=html;
+  $$('#waterGlasses [data-water]').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.water,d=getDaily(); d.water=(i+1===d.water)?i:i+1; saveStore(); renderToday(); }));
+  $$('#todayOut [data-meal]').forEach(c=>c.addEventListener('change',()=>{ const d=getDaily(); d.meals[+c.dataset.meal]=c.checked; saveStore(); renderToday(); }));
+  const wd=$('#woDone'); if(wd) wd.addEventListener('change',()=>{ getDaily().workout=wd.checked; saveStore(); });
+  const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); });
 }
 
 /* ================= RENDER ================= */
@@ -1507,6 +1580,11 @@ function render(){
   $('#weekOut').innerHTML=buildWeek(days,wo.plan);
   // tips
   $('#tipsOut').innerHTML=buildTips(c);
+
+  // «Σήμερα» daily dashboard
+  window.__plan={c, opts, days:+days, wo};
+  renderToday();
+  try{ localStorage.setItem('fitplan_generated','1'); }catch(e){}
 
   // goal weight line on the progress chart
   lastTargetWeight = (c.targetWeight!=null) ? c.targetWeight : null;
@@ -2244,6 +2322,10 @@ $('#installNow').addEventListener('click',async()=>{
   $('#recDate').value=new Date().toISOString().slice(0,10);
   renderProgress();
   maybeShowBanner();
+  // returning users → go straight to today's dashboard
+  let gen=false; try{ gen=localStorage.getItem('fitplan_generated')==='1'; }catch(e){}
+  if(gen && +$('#age').value>0 && +$('#height').value>0 && +$('#weight').value>0){ try{ render(); }catch(e){} }
+  else renderToday();
 })();
 </script>
 </body>
