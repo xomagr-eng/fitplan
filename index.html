@@ -1524,7 +1524,7 @@ const QUOTES=[
   'Η πειθαρχία είναι να επιλέγεις αυτό που θέλεις πραγματικά, αντί για αυτό που θες τώρα.','Ξεκίνα εκεί που είσαι. Χρησιμοποίησε ό,τι έχεις. Κάνε ό,τι μπορείς.'
 ];
 function todayKey(){ return new Date().toISOString().slice(0,10); }
-function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false,noSugar:false}; return p.daily[k]; }
+function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false,noSugar:false,log:[]}; if(!p.daily[k].log)p.daily[k].log=[]; return p.daily[k]; }
 function noSugarStreak(){
   const dd=curProfile().daily||{}; let s=0, d=new Date();
   if(!(dd[todayKey()]&&dd[todayKey()].noSugar)) d.setDate(d.getDate()-1);
@@ -1562,6 +1562,41 @@ async function enableReminders(on){
     if(p!=='granted'){ alert('Δώσε άδεια ειδοποιήσεων για να λειτουργήσουν οι υπενθυμίσεις.'); return false; }
   }
   r.enabled=on; saveRem(r); scheduleReminders(); return true;
+}
+/* 📊 Ημερολόγιο θερμίδων — κοινά τρόφιμα (kcal/μερίδα) */
+const COMMON_KCAL={'Καφές σκέτος':2,'Καφές με γάλα':40,'Φραπέ με ζάχαρη & γάλα':120,'Τοστ':250,'Κουλούρι Θεσσαλονίκης':250,'Τυρόπιτα':350,'Σπανακόπιτα':320,'Σουβλάκι (καλαμάκι)':110,'Πίτα γύρο':600,'Μπανάνα':105,'Μήλο':80,'Πορτοκάλι':60,'Γιαούρτι':120,'Μπάρα δημητριακών':100,'Σοκολάτα (πλάκα)':250,'Παγωτό ξυλάκι':180,'Πατατάκια (σακούλα)':300,'Μπύρα (330ml)':140,'Κρασί (ποτήρι)':120,'Αναψυκτικό (κουτί)':140,'Χυμός πορτοκάλι':110,'Ψωμί (φέτα)':80,'Ρύζι (μερίδα)':200,'Μακαρόνια (μερίδα)':300,'Πατάτες τηγανητές':350,'Κοτόπουλο (μερίδα)':250,'Χοιρινό (μερίδα)':300,'Χωριάτικη σαλάτα':250,'Φασολάδα (πιάτο)':300,'Φακές (πιάτο)':280,'Μουσακάς (μερίδα)':450,'Παστίτσιο (μερίδα)':450,'Μπριάμ':250,'Ελιές (10)':50,'Φέτα (30g)':80,'Αυγό βραστό':78,'Ξηροί καρποί (χούφτα)':180,'Μέλι (κ.γ.)':20,'Ζάχαρη (κ.γ.)':16,'Νερό':0};
+async function scanBarcode(){
+  if(!('BarcodeDetector' in window)){ alert('Ο browser σου δεν υποστηρίζει σάρωση barcode εδώ. Πρόσθεσε το τρόφιμο χειροκίνητα.'); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ alert('Δεν υπάρχει πρόσβαση σε κάμερα εδώ.'); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=document.createElement('video'); v.srcObject=stream; v.setAttribute('playsinline',''); await v.play();
+    const ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:#000;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px';
+    v.style.cssText='max-width:100%;max-height:70vh;border-radius:8px';
+    const info=document.createElement('div'); info.style.cssText='color:#fff;margin-top:12px'; info.textContent='📷 Στόχευσε το barcode…';
+    const closeB=document.createElement('button'); closeB.textContent='Άκυρο'; closeB.className='btn-ghost'; closeB.style.cssText='margin-top:12px;color:#fff;border-color:#fff';
+    ov.append(v,info,closeB); document.body.appendChild(ov);
+    const det=new BarcodeDetector(); let done=false;
+    const stop=()=>{ done=true; stream.getTracks().forEach(t=>t.stop()); ov.remove(); };
+    closeB.onclick=stop;
+    const loop=async()=>{ if(done)return; try{ const codes=await det.detect(v); if(codes&&codes.length){ const code=codes[0].rawValue; stop(); lookupBarcode(code); return; } }catch(e){} requestAnimationFrame(loop); };
+    loop();
+  }catch(e){ alert('Δεν δόθηκε πρόσβαση στην κάμερα.'); }
+}
+async function lookupBarcode(code){
+  try{
+    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,nutriments');
+    const j=await r.json();
+    if(j.status===1 && j.product){ const nm=j.product.product_name||('Προϊόν '+code); const kc=Math.round((j.product.nutriments&&j.product.nutriments['energy-kcal_100g'])||0);
+      const ln=$('#logName'), lk=$('#logKcal'); if(ln)ln.value=nm; if(lk)lk.value=kc||''; alert('Βρέθηκε: '+nm+(kc?(' ~'+kc+' kcal/100g'):'')+'.\nΔιόρθωσε ποσότητα/θερμίδες & πάτα ➕.'); return; }
+    alert('Δεν βρέθηκε προϊόν για '+code+'. Πρόσθεσέ το χειροκίνητα.');
+  }catch(e){ alert('Χρειάζεται σύνδεση στο ίντερνετ για αναζήτηση barcode. Πρόσθεσε χειροκίνητα.'); }
+}
+function weekChallenges(){
+  const dd=curProfile().daily||{}, now=new Date(), monday=new Date(now); monday.setDate(now.getDate()-((now.getDay()+6)%7));
+  let workouts=0,waterDays=0,noSugarDays=0;
+  for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(monday.getDate()+i); const e=dd[d.toISOString().slice(0,10)]; if(!e)continue; if(e.workout)workouts++; if(e.water>=6)waterDays++; if(e.noSugar)noSugarDays++; }
+  return [{i:'💪',t:'5 προπονήσεις',cur:workouts,goal:5},{i:'💧',t:'7 μέρες νερό',cur:waterDays,goal:7},{i:'🚫🍬',t:'4 μέρες χωρίς ζάχαρη',cur:noSugarDays,goal:4}];
 }
 function coachAdvice(){
   const g=(curProfile().inputs&&curProfile().inputs.goal)||'maintain';
@@ -1652,6 +1687,13 @@ function renderToday(){
       ${curAdj?`<div class="hint" style="margin-top:8px">Τρέχουσα προσαρμογή: <b>${curAdj>0?'+':''}${curAdj} kcal</b> · <a href="#" id="coachReset" class="no-print">μηδενισμός</a></div>`:''}
     </div>`;
   }
+  // 🏅 εβδομαδιαία πρόκληση
+  const chs=weekChallenges();
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">🏅 Εβδομαδιαία πρόκληση</div>`;
+  chs.forEach(ch=>{ const pct=Math.min(100,ch.cur/ch.goal*100), done=ch.cur>=ch.goal;
+    html+=`<div style="margin-bottom:8px"><div style="font-size:.85rem;display:flex;justify-content:space-between"><span>${ch.i} ${ch.t}${done?' ✅':''}</span><span>${ch.cur}/${ch.goal}</span></div>
+      <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:3px"><div style="height:100%;width:${pct}%;background:${done?'var(--good)':'var(--brand)'}"></div></div></div>`; });
+  html+=`</div>`;
   // water
   const wT=Math.max(6,Math.round((P.c.water||2)/0.25));
   html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">💧 Νερό — ${day.water}/${wT} ποτήρια <span class="hint">(${(day.water*0.25).toFixed(2)}L / ${(P.c.water||2).toFixed(1)}L)</span></div>
@@ -1663,6 +1705,20 @@ function renderToday(){
     html+=`<label class="meal" style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" data-meal="${i}" ${day.meals[i]?'checked':''} style="width:auto;flex:0 0 auto"> <span><span class="mt">${labels[i]} · ~${kc} kcal</span><br><span class="mn" style="${day.meals[i]?'text-decoration:line-through;opacity:.6':''}">${m.f.n}</span></span></label>`;
   });
   html+=`</div>`;
+  // 📊 ημερολόγιο θερμίδων
+  const log=day.log||[], eaten=log.reduce((a,b)=>a+(+b.kcal||0),0), tgt=P.c.target;
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">📊 Ημερολόγιο θερμίδων — ${eaten}/${tgt} kcal</div>
+    <div style="height:12px;background:var(--line);border-radius:6px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:${Math.min(100,eaten/tgt*100).toFixed(0)}%;background:${eaten>tgt?'var(--bad)':'var(--brand)'}"></div></div>
+    <div style="font-size:.85rem;color:${eaten>tgt?'var(--bad)':'var(--muted)'};margin-bottom:8px">${eaten<=tgt?('Απομένουν <b>'+(tgt-eaten)+'</b> kcal'):('⚠️ Υπέρβαση <b>'+(eaten-tgt)+'</b> kcal')}</div>
+    ${log.map((it,i)=>`<div class="meal" style="display:flex;justify-content:space-between;align-items:center"><span class="mn">${it.name}</span><span class="mm">${it.kcal} kcal <button data-dellog="${i}" class="btn-ghost no-print" style="padding:1px 6px">🗑️</button></span></div>`).join('')||'<div class="hint">Κατέγραψε ό,τι έφαγες σήμερα.</div>'}
+    <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">
+      <input id="logName" list="commonFoods" placeholder="τρόφιμο" style="flex:1;min-width:120px">
+      <input id="logKcal" type="number" placeholder="kcal" style="width:90px">
+      <button class="btn-primary" id="logAdd">➕</button>
+      <button class="btn-ghost" id="scanBtn" title="Σάρωση barcode (χρειάζεται κάμερα+ίντερνετ)">📷</button>
+    </div>
+    <datalist id="commonFoods">${Object.keys(COMMON_KCAL).map(k=>`<option value="${k}">`).join('')}</datalist>
+  </div>`;
   // workout
   const sched={3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]}[P.days]||[], ti=sched.indexOf(idx);
   html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">💪 Σημερινή προπόνηση</div>`;
@@ -1698,6 +1754,10 @@ function renderToday(){
   const cr=$('#coachReset'); if(cr) cr.addEventListener('click',e=>{ e.preventDefault(); curProfile().calAdj=0; saveStore(); render(); });
   const rOn=$('#remOn'); if(rOn) rOn.addEventListener('change',async()=>{ const ok=await enableReminders(rOn.checked); if(!ok) rOn.checked=false; renderToday(); });
   ['remWater','remMeals','remWorkout'].forEach(id=>{ const el=$('#'+id); if(el) el.addEventListener('change',()=>{ const r=loadRem(); r.water=$('#remWater').checked; r.meals=$('#remMeals').checked; r.workout=$('#remWorkout').checked; saveRem(r); scheduleReminders(); }); });
+  const ln=$('#logName'); if(ln) ln.addEventListener('input',()=>{ if(COMMON_KCAL[ln.value]!=null && !$('#logKcal').value) $('#logKcal').value=COMMON_KCAL[ln.value]; });
+  const la=$('#logAdd'); if(la) la.addEventListener('click',()=>{ const nm=($('#logName').value||'').trim(); let kc=parseInt($('#logKcal').value); if(!nm)return; if(isNaN(kc)&&COMMON_KCAL[nm]!=null)kc=COMMON_KCAL[nm]; if(isNaN(kc)){ alert('Βάλε θερμίδες (kcal).'); return; } const d=getDaily(); d.log.push({name:nm,kcal:kc}); saveStore(); renderToday(); });
+  $$('#todayOut [data-dellog]').forEach(b=>b.addEventListener('click',()=>{ const d=getDaily(); d.log.splice(+b.dataset.dellog,1); saveStore(); renderToday(); }));
+  const sb=$('#scanBtn'); if(sb) sb.addEventListener('click',scanBarcode);
   const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); renderAch(); });
 }
 
