@@ -172,6 +172,7 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
       <button class="btn-ghost" id="colorBtn" title="Χρώμα εφαρμογής" style="padding:8px 10px">🎨</button>
       <button class="btn-ghost" id="fsBtn" title="Πλήρης οθόνη" style="padding:8px 10px">⛶</button>
       <button class="btn-ghost" id="installBtn" title="Εγκατάσταση εφαρμογής" style="padding:8px 10px;display:none">⬇️ Εγκατάσταση</button>
+      <button class="btn-ghost" id="langBtn" title="Language / Γλώσσα" style="padding:8px 10px">🌐 EN</button>
       <button class="btn-ghost" id="themeBtn" title="Εναλλαγή θέματος" style="padding:8px 10px">🌓</button>
     </div>
   </header>
@@ -605,6 +606,21 @@ function updateGoalWeightRow(){
 $$('#goalSeg button').forEach(b=>b.addEventListener('click',updateGoalWeightRow));
 updateGoalWeightRow();
 
+// 🌐 language (navigation chrome only — το περιεχόμενο μένει ελληνικό)
+const I18N_TABS={today:['🏠 Σήμερα','🏠 Today'],diet:['🍽️ Διατροφή (7 ημέρες)','🍽️ Diet (7 days)'],shop:['🛒 Λίστα αγορών','🛒 Shopping'],workout:['💪 Γυμναστική','💪 Workout'],week:['🗓️ Εβδομαδιαίο πλάνο','🗓️ Weekly plan'],progress:['📈 Πρόοδος','📈 Progress'],ach:['🏆 Επιτεύγματα','🏆 Achievements'],quiz:['🎓 Κουίζ','🎓 Quiz'],family:['👪 Οικογένεια','👪 Family'],tips:['💡 Συμβουλές','💡 Tips']};
+const I18N_BTN={'#genBtn':['⚙️ Δημιουργία προγράμματος','⚙️ Create plan'],'#editBtn':['✏️ Επεξεργασία στοιχείων','✏️ Edit details'],'#saveBtn':['💾 Αποθήκευση','💾 Save'],'#printBtn':['🖨️ Εκτύπωση / PDF','🖨️ Print / PDF'],'#loadBtn':['↺ Φόρτωση αποθηκευμένου','↺ Load saved'],'#resetBtn':['Καθαρισμός','Reset']};
+function applyLang(l){
+  const i=l==='en'?1:0;
+  $$('.tabs button[data-tab]').forEach(b=>{ const k=b.dataset.tab; if(I18N_TABS[k]) b.textContent=I18N_TABS[k][i]; });
+  Object.entries(I18N_BTN).forEach(([sel,v])=>{ const el=$(sel); if(el) el.textContent=v[i]; });
+  const sub=document.querySelector('header.app .sub'); if(sub) sub.textContent = i? 'Auto diet, nutrition & workout plans (content in Greek)' : 'Αυτόματα προγράμματα Διατροφής, Δίαιτας & Γυμναστικής';
+  const lb=$('#langBtn'); if(lb) lb.textContent = i? '🌐 ΕΛ' : '🌐 EN';
+  document.documentElement.lang = i?'en':'el';
+  try{ localStorage.setItem('fitplan_lang',l); }catch(e){}
+}
+$('#langBtn').addEventListener('click',()=>{ let cur='el'; try{ cur=localStorage.getItem('fitplan_lang')||'el'; }catch(e){} applyLang(cur==='en'?'el':'en'); });
+(function(){ let l='el'; try{ l=localStorage.getItem('fitplan_lang')||'el'; }catch(e){} if(l==='en') applyLang('en'); })();
+
 // theme toggle
 $('#themeBtn').addEventListener('click',()=>{
   const r=document.documentElement;
@@ -840,7 +856,9 @@ const FOODS = {
     {n:'Ψωμί ολικής με ταχίνι & φρούτο', kcal:320, p:12, note:'2 φέτες, 1 κ.σ. ταχίνι', veg:true, fast:true, cost:0.6, pr:['fibre']},
     {n:'Βρώμη με ρόφημα σόγιας, μπανάνα & καρύδια', kcal:350, p:12, note:'νηστίσιμο', veg:true, fast:true, cost:0.9, pr:['fibre']},
     {n:'Φρυγανιές ολικής με ταχίνι & μαρμελάδα', kcal:320, p:9, note:'νηστίσιμο', veg:true, fast:true, cost:0.5, av:['highgi']},
-    {n:'Χαλβάς με ξηρούς καρπούς & φρούτο', kcal:340, p:10, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, av:['highgi']}
+    {n:'Χαλβάς με ξηρούς καρπούς & φρούτο', kcal:340, p:10, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, av:['highgi']},
+    {n:'Αυγά ποσέ με αβοκάντο & ψωμί ολικής', kcal:360, p:20, note:'', veg:true, cost:1.0},
+    {n:'Ομελέτα με σπανάκι & φέτα', kcal:380, p:24, note:'', veg:true, cost:0.9, av:['salty']}
   ],
   snack:[
     {n:'Φρούτο εποχής & 15 αμύγδαλα', kcal:200, p:6, note:'', veg:true, fast:true, cost:0.6, pr:['fibre']},
@@ -867,7 +885,10 @@ const FOODS = {
     {n:'Γίγαντες πλακί με ψωμί', kcal:540, p:20, note:'νηστίσιμο', veg:true, fast:true, cost:0.9, pr:['fibre','iron']},
     {n:'Αρακάς λαδερός με πατάτες & ψωμί', kcal:500, p:16, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, pr:['fibre'], av:['highgi']},
     {n:'Σπανακόρυζο με λεμόνι', kcal:490, p:14, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, pr:['iron','fibre'], av:['highgi']},
-    {n:'Χταπόδι με κοφτό μακαρονάκι', kcal:540, p:34, note:'νηστίσιμο (θαλασσινό)', veg:false, fast:true, cost:2.5}
+    {n:'Χταπόδι με κοφτό μακαρονάκι', kcal:540, p:34, note:'νηστίσιμο (θαλασσινό)', veg:false, fast:true, cost:2.5},
+    {n:'Κοτόπουλο κάρι με ρύζι', kcal:570, p:44, note:'150g κοτόπουλο', veg:false, cost:2.2, av:['highgi']},
+    {n:'Μπριάμ λαχανικών με φέτα', kcal:480, p:14, note:'', veg:true, cost:1.0, av:['salty'], pr:['fibre']},
+    {n:'Γεμιστά με ρύζι (νηστίσιμα)', kcal:520, p:12, note:'νηστίσιμο', veg:true, fast:true, cost:0.9, pr:['fibre'], av:['highgi']}
   ],
   dinner:[
     {n:'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο', kcal:420, p:38, note:'', veg:false, fish:true, cost:3.0, pr:['omega3','iron']},
@@ -881,7 +902,9 @@ const FOODS = {
     {n:'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι', kcal:420, p:12, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, av:['salty'], pr:['fibre']},
     {n:'Μανιτάρια σοτέ με ρύζι', kcal:410, p:12, note:'νηστίσιμο', veg:true, fast:true, cost:0.9, av:['highgi']},
     {n:'Χούμους με πίτα & λαχανικά', kcal:420, p:14, note:'νηστίσιμο', veg:true, fast:true, cost:0.7, pr:['fibre']},
-    {n:'Καλαμαράκια με σαλάτα', kcal:400, p:30, note:'νηστίσιμο (θαλασσινό)', veg:false, fast:true, cost:2.2}
+    {n:'Καλαμαράκια με σαλάτα', kcal:400, p:30, note:'νηστίσιμο (θαλασσινό)', veg:false, fast:true, cost:2.2},
+    {n:'Σαλάτα τόνου με φασόλια', kcal:430, p:34, note:'', veg:false, fish:true, cost:1.6, pr:['fibre','omega3'], av:['salty']},
+    {n:'Ζυμαρικά ολικής με λαχανικά & ελαιόλαδο', kcal:520, p:16, note:'νηστίσιμο', veg:true, fast:true, cost:0.8, pr:['fibre']}
   ]
 };
 // meal share of daily calories
@@ -995,7 +1018,14 @@ const FOOD_ING = {
   'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι':['Σαλάτα λαχανικά','Ελιές','Ψωμί','Ταχίνι'],
   'Μανιτάρια σοτέ με ρύζι':['Μανιτάρια','Ρύζι'],
   'Χούμους με πίτα & λαχανικά':['Χούμους','Πίτα','Λαχανικά'],
-  'Καλαμαράκια με σαλάτα':['Καλαμάρι','Σαλάτα λαχανικά']
+  'Καλαμαράκια με σαλάτα':['Καλαμάρι','Σαλάτα λαχανικά'],
+  'Αυγά ποσέ με αβοκάντο & ψωμί ολικής':['Αυγά','Αβοκάντο','Ψωμί ολικής'],
+  'Ομελέτα με σπανάκι & φέτα':['Αυγά','Σπανάκι','Φέτα','Ψωμί ολικής'],
+  'Κοτόπουλο κάρι με ρύζι':['Κοτόπουλο','Ρύζι','Λαχανικά'],
+  'Μπριάμ λαχανικών με φέτα':['Λαχανικά','Πατάτες','Ντομάτα','Φέτα'],
+  'Γεμιστά με ρύζι (νηστίσιμα)':['Ντομάτα','Ρύζι','Λαχανικά'],
+  'Σαλάτα τόνου με φασόλια':['Τόνος (κονσέρβα)','Φασόλια','Σαλάτα λαχανικά'],
+  'Ζυμαρικά ολικής με λαχανικά & ελαιόλαδο':['Ζυμαρικά ολικής','Λαχανικά','Ελαιόλαδο','Ντομάτα']
 };
 
 // αναλυτικές συνταγές (υλικά 1 μερίδας + εκτέλεση)
@@ -1074,14 +1104,22 @@ const RECIPES = {
   'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι':{ing:['ντομάτα, αγγούρι, πιπεριά','κρεμμύδι','ελιές','ελαιόλαδο, ρίγανη','ψωμί, ταχίνι'],steps:['Κόψε τα λαχανικά.','Πρόσθεσε ελιές, ελαιόλαδο & ρίγανη.','Σέρβιρε με ψωμί αλειμμένο με ταχίνι.']},
   'Μανιτάρια σοτέ με ρύζι':{ing:['μανιτάρια','ρύζι','σκόρδο, μαϊντανός','ελαιόλαδο'],steps:['Σοτάρισε μανιτάρια με σκόρδο.','Βράσε το ρύζι.','Σέρβιρε μαζί με μαϊντανό.']},
   'Χούμους με πίτα & λαχανικά':{ing:['χούμους','1 πίτα','λαχανικά'],steps:['Ζέστανε την πίτα.','Σέρβιρε με χούμους & ωμά λαχανικά.']},
-  'Καλαμαράκια με σαλάτα':{ing:['200g καλαμάρι','σαλάτα','ελαιόλαδο, λεμόνι'],steps:['Καθάρισε & ψήσε τα καλαμάρια στη σχάρα 3-4′.','Σέρβιρε με σαλάτα & λαδολέμονο.']}
+  'Καλαμαράκια με σαλάτα':{ing:['200g καλαμάρι','σαλάτα','ελαιόλαδο, λεμόνι'],steps:['Καθάρισε & ψήσε τα καλαμάρια στη σχάρα 3-4′.','Σέρβιρε με σαλάτα & λαδολέμονο.']},
+  'Αυγά ποσέ με αβοκάντο & ψωμί ολικής':{ing:['2 αυγά','1/2 αβοκάντο','2 φέτες ψωμί ολικής','αλάτι/πιπέρι, λεμόνι'],steps:['Βράσε νερό με λίγο ξύδι, ρίξε τα αυγά για ~3′ (ποσέ).','Λιώσε το αβοκάντο στο ψωμί με λεμόνι.','Βάλε τα αυγά από πάνω.']},
+  'Ομελέτα με σπανάκι & φέτα':{ing:['3 αυγά','χούφτα σπανάκι','40g φέτα','λίγο ελαιόλαδο'],steps:['Σοτάρισε το σπανάκι.','Ρίξε τα χτυπημένα αυγά & τη φέτα.','Μαγείρεψε 3-4′.']},
+  'Κοτόπουλο κάρι με ρύζι':{ing:['150g κοτόπουλο','ρύζι','κάρι, γάλα καρύδας/γιαούρτι','κρεμμύδι','λαχανικά'],steps:['Σοτάρισε κοτόπουλο & κρεμμύδι.','Πρόσθεσε κάρι, λαχανικά & λίγο υγρό, σιγόβρασε 15′.','Σέρβιρε με ρύζι.']},
+  'Μπριάμ λαχανικών με φέτα':{ing:['κολοκύθι, μελιτζάνα','πατάτα','ντομάτα, κρεμμύδι','ελαιόλαδο','φέτα'],steps:['Κόψε τα λαχανικά σε φέτες.','Ρίξε ελαιόλαδο & ντομάτα.','Ψήσε στους 190°C ~50′.','Σέρβιρε με φέτα.']},
+  'Γεμιστά με ρύζι (νηστίσιμα)':{ing:['ντομάτες & πιπεριές','ρύζι','κρεμμύδι, μαϊντανός','ελαιόλαδο'],steps:['Άδειασε τις ντομάτες/πιπεριές.','Ανάμειξε ρύζι με κρεμμύδι, μυρωδικά & τον χυμό.','Γέμισε & ψήσε στους 180°C ~60′.']},
+  'Σαλάτα τόνου με φασόλια':{ing:['1 κονσέρβα τόνος','100g βρασμένα φασόλια','κρεμμύδι, μαϊντανός','ελαιόλαδο, λεμόνι'],steps:['Ανάμειξε τόνο, φασόλια & ψιλοκομμένο κρεμμύδι.','Περίχυσε λαδολέμονο & μαϊντανό.']},
+  'Ζυμαρικά ολικής με λαχανικά & ελαιόλαδο':{ing:['80g ζυμαρικά ολικής','λαχανικά (κολοκύθι/μπρόκολο)','ντομάτα','σκόρδο','ελαιόλαδο'],steps:['Βράσε τα ζυμαρικά.','Σοτάρισε λαχανικά με σκόρδο & ντομάτα.','Ανάμειξε με ελαιόλαδο.']}
 };
 // χρόνος μαγειρέματος (λεπτά) ανά συνταγή
 const RTIME = {
   'Βρώμη με γάλα, μπανάνα & μέλι':6,'Ελληνικό γιαούρτι 2% με καρύδια & μέλι':3,'Ομελέτα 3 αυγά με λαχανικά & τοστ ολικής':10,'Τοστ ολικής με αβγό & τυρί χαμηλών λιπαρών':6,'Smoothie: γάλα, βρώμη, φρούτα & πρωτεΐνη':3,'Γιαούρτι με granola & μούρα':3,'Ψωμί ολικής με ταχίνι & φρούτο':3,'Βρώμη με ρόφημα σόγιας, μπανάνα & καρύδια':6,'Φρυγανιές ολικής με ταχίνι & μαρμελάδα':3,'Χαλβάς με ξηρούς καρπούς & φρούτο':2,
   'Φρούτο εποχής & 15 αμύγδαλα':2,'Ελληνικό γιαούρτι με μέλι':2,'Μπάρα πρωτεΐνης':1,'Φρυγανιές ολικής με τυρί cottage':3,'Χούμους με λαχανικά (καρότο/αγγούρι)':5,'Μήλο με φυστικοβούτυρο':3,'Ξηροί καρποί ανάμεικτοι':1,'Ελιές & παξιμάδι':3,'Αποξηραμένα φρούτα & καρύδια':2,
   'Κοτόπουλο σχάρας με ρύζι & σαλάτα':25,'Σολομός ψητός με πατάτα & μπρόκολο':25,'Φακές με ελαιόλαδο & ψωμί ολικής':40,'Μοσχάρι ισχνό με κριθαρότο λαχανικών':35,'Ρεβίθια στιφάδο με ρύζι':50,'Γαλοπούλα με γλυκοπατάτα & σαλάτα':30,'Τόνος με ζυμαρικά ολικής & ντομάτα':20,'Ομελέτα λαχανικών με πατάτες φούρνου & σαλάτα':30,'Μπιφτέκια κοτόπουλου φούρνου με μπουργκούλ':30,'Φασολάδα με ψωμί & ελιές':70,'Γίγαντες πλακί με ψωμί':60,'Αρακάς λαδερός με πατάτες & ψωμί':35,'Σπανακόρυζο με λεμόνι':30,'Χταπόδι με κοφτό μακαρονάκι':50,
-  'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο':25,'Σαλάτα με κοτόπουλο, αβοκάντο & ελαιόλαδο':15,'Αυγά ομελέτα με τυρί & σαλάτα εποχής':10,'Γιαούρτι υψηλής πρωτεΐνης με ξηρούς καρπούς & φρούτο':3,'Τυρί cottage με λαχανικά & ψωμί ολικής':5,'Φασολάκια λαδερά με φέτα & ψωμί':35,'Γαρίδες σαλάτα με κινόα':25,'Λαχανικά στον ατμό με τόφου & σόγια':20,'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι':10,'Μανιτάρια σοτέ με ρύζι':25,'Χούμους με πίτα & λαχανικά':5,'Καλαμαράκια με σαλάτα':15
+  'Ψάρι (τσιπούρα/λαβράκι) με χόρτα & ελαιόλαδο':25,'Σαλάτα με κοτόπουλο, αβοκάντο & ελαιόλαδο':15,'Αυγά ομελέτα με τυρί & σαλάτα εποχής':10,'Γιαούρτι υψηλής πρωτεΐνης με ξηρούς καρπούς & φρούτο':3,'Τυρί cottage με λαχανικά & ψωμί ολικής':5,'Φασολάκια λαδερά με φέτα & ψωμί':35,'Γαρίδες σαλάτα με κινόα':25,'Λαχανικά στον ατμό με τόφου & σόγια':20,'Χωριάτικη (χωρίς φέτα) με ελιές, ψωμί & ταχίνι':10,'Μανιτάρια σοτέ με ρύζι':25,'Χούμους με πίτα & λαχανικά':5,'Καλαμαράκια με σαλάτα':15,
+  'Αυγά ποσέ με αβοκάντο & ψωμί ολικής':10,'Ομελέτα με σπανάκι & φέτα':10,'Κοτόπουλο κάρι με ρύζι':25,'Μπριάμ λαχανικών με φέτα':60,'Γεμιστά με ρύζι (νηστίσιμα)':70,'Σαλάτα τόνου με φασόλια':10,'Ζυμαρικά ολικής με λαχανικά & ελαιόλαδο':20
 };
 let recipeServings = 1;
 function scaleIng(s,m){
@@ -1524,7 +1562,7 @@ const QUOTES=[
   'Η πειθαρχία είναι να επιλέγεις αυτό που θέλεις πραγματικά, αντί για αυτό που θες τώρα.','Ξεκίνα εκεί που είσαι. Χρησιμοποίησε ό,τι έχεις. Κάνε ό,τι μπορείς.'
 ];
 function todayKey(){ return new Date().toISOString().slice(0,10); }
-function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false,noSugar:false,log:[]}; if(!p.daily[k].log)p.daily[k].log=[]; return p.daily[k]; }
+function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false,noSugar:false,log:[],steps:0}; if(!p.daily[k].log)p.daily[k].log=[]; return p.daily[k]; }
 function noSugarStreak(){
   const dd=curProfile().daily||{}; let s=0, d=new Date();
   if(!(dd[todayKey()]&&dd[todayKey()].noSugar)) d.setDate(d.getDate()-1);
@@ -1705,6 +1743,11 @@ function renderToday(){
     html+=`<label class="meal" style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" data-meal="${i}" ${day.meals[i]?'checked':''} style="width:auto;flex:0 0 auto"> <span><span class="mt">${labels[i]} · ~${kc} kcal</span><br><span class="mn" style="${day.meals[i]?'text-decoration:line-through;opacity:.6':''}">${m.f.n}</span></span></label>`;
   });
   html+=`</div>`;
+  // 👣 βήματα
+  const stGoal=10000, stKcal=Math.round((day.steps||0)*(P.c.w||70)*0.0004);
+  html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">👣 Βήματα σήμερα — ${(day.steps||0).toLocaleString('el-GR')}/${stGoal.toLocaleString('el-GR')} <span class="hint">(~${stKcal} kcal)</span></div>
+    <div style="height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:${Math.min(100,(day.steps||0)/stGoal*100).toFixed(0)}%;background:${(day.steps||0)>=stGoal?'var(--good)':'var(--brand)'}"></div></div>
+    <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><input id="stepsIn" type="number" placeholder="βήματα" value="${day.steps||''}" style="width:130px"><button class="btn-primary" id="stepsSet">Καταγραφή</button><span class="hint">από το κινητό/βηματόμετρο</span></div></div>`;
   // 📊 ημερολόγιο θερμίδων
   const log=day.log||[], eaten=log.reduce((a,b)=>a+(+b.kcal||0),0), tgt=P.c.target;
   html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">📊 Ημερολόγιο θερμίδων — ${eaten}/${tgt} kcal</div>
@@ -1758,6 +1801,7 @@ function renderToday(){
   const la=$('#logAdd'); if(la) la.addEventListener('click',()=>{ const nm=($('#logName').value||'').trim(); let kc=parseInt($('#logKcal').value); if(!nm)return; if(isNaN(kc)&&COMMON_KCAL[nm]!=null)kc=COMMON_KCAL[nm]; if(isNaN(kc)){ alert('Βάλε θερμίδες (kcal).'); return; } const d=getDaily(); d.log.push({name:nm,kcal:kc}); saveStore(); renderToday(); });
   $$('#todayOut [data-dellog]').forEach(b=>b.addEventListener('click',()=>{ const d=getDaily(); d.log.splice(+b.dataset.dellog,1); saveStore(); renderToday(); }));
   const sb=$('#scanBtn'); if(sb) sb.addEventListener('click',scanBarcode);
+  const ss=$('#stepsSet'); if(ss) ss.addEventListener('click',()=>{ const v=parseInt($('#stepsIn').value)||0; getDaily().steps=v; saveStore(); renderToday(); renderAch(); });
   const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); renderAch(); });
 }
 
