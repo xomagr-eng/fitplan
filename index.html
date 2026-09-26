@@ -140,6 +140,18 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
   .tabs{display:none}
   .day{break-inside:avoid}
 }
+/* Οριζόντια θέση σε κινητό/τάμπλετ → ευρεία «desktop-like» διάταξη (2 στήλες) */
+@media (orientation:landscape) and (max-width:1200px) and (max-height:820px){
+  .wrap{max-width:100%;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  #dietOut,#woOut,#shopOut,#famShopOut,#todayOut{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  #dietOut .day,#woOut .day,#shopOut .day,#famShopOut .day,#todayOut .card{margin-bottom:0}
+  #woOut .note,#shopOut .note,#famShopOut .note{grid-column:1/-1}
+  #todayOut .card:first-child{grid-column:1/-1}
+  #achOut{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+}
+@media (orientation:landscape) and (max-width:1000px) and (max-height:560px){
+  header.app{padding:8px 0 6px}
+}
 </style>
 </head>
 <body>
@@ -260,6 +272,16 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
         <button type="button" data-h="diab">Προδιαβήτης/Διαβήτης</button>
         <button type="button" data-h="bp">Υπέρταση</button>
         <button type="button" data-h="iron">Σιδηροπενία</button>
+      </div>
+
+      <label class="field" style="margin-top:12px">🚫 Αλλεργίες / δυσανεξίες (αποκλείει τροφές)</label>
+      <div id="allergyChips" class="seg" style="flex-wrap:wrap">
+        <button type="button" data-a="gluten">Γλουτένη</button>
+        <button type="button" data-a="lactose">Λακτόζη</button>
+        <button type="button" data-a="nuts">Ξηροί καρποί</button>
+        <button type="button" data-a="egg">Αυγό</button>
+        <button type="button" data-a="fish">Ψάρι/Θαλασσινά</button>
+        <button type="button" data-a="soy">Σόγια</button>
       </div>
 
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:12px">
@@ -403,6 +425,8 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
         <button data-tab="workout">💪 Γυμναστική</button>
         <button data-tab="week">🗓️ Εβδομαδιαίο πλάνο</button>
         <button data-tab="progress">📈 Πρόοδος</button>
+        <button data-tab="ach">🏆 Επιτεύγματα</button>
+        <button data-tab="quiz">🎓 Κουίζ</button>
         <button data-tab="family">👪 Οικογένεια</button>
         <button data-tab="tips">💡 Συμβουλές</button>
       </div>
@@ -488,6 +512,17 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
         <div id="progChips" class="tabs" style="margin-bottom:8px"></div>
         <div id="chartWrap" style="overflow-x:auto"></div>
         <div id="histTable" style="margin-top:14px"></div>
+      </div>
+
+      <div class="tabpane" id="tab-ach">
+        <h2 class="section"><span class="ic">🏆</span>Επιτεύγματα <span id="achCount" style="color:var(--muted);font-weight:400;font-size:.9rem"></span></h2>
+        <div class="note">Ξεκλείδωσε παράσημα με τη συνέπειά σου — προπονήσεις, νερό, σερί, μέρες χωρίς ζάχαρη & απώλεια βάρους!</div>
+        <div id="achOut" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:12px"></div>
+      </div>
+
+      <div class="tabpane" id="tab-quiz">
+        <h2 class="section"><span class="ic">🎓</span>Κουίζ Γνώσεων</h2>
+        <div id="quizOut"></div>
       </div>
 
       <div class="tabpane" id="tab-family">
@@ -606,6 +641,7 @@ $('#colorBtn').addEventListener('click',()=>{
 
 /* ===== special diet options: νηστεία / υγεία / προϋπολογισμός ===== */
 const healthSel = new Set();
+const allergySel = new Set();
 function updateFastRow(){ const r=$('#fishRow'); if(r) r.style.display = $('#fastChk').checked ? 'flex' : 'none'; }
 $('#fastChk').addEventListener('change',updateFastRow);
 function updateStyleUI(){ const pw=$('#placeWrap'); if(pw) pw.style.display = ($('#workoutStyle').value==='strength')?'block':'none'; }
@@ -616,6 +652,11 @@ $$('#healthChips button').forEach(b=>b.addEventListener('click',()=>{
   if(healthSel.has(h)){ healthSel.delete(h); b.classList.remove('active'); }
   else { healthSel.add(h); b.classList.add('active'); }
 }));
+$$('#allergyChips button').forEach(b=>b.addEventListener('click',()=>{
+  const a=b.dataset.a;
+  if(allergySel.has(a)){ allergySel.delete(a); b.classList.remove('active'); }
+  else { allergySel.add(a); b.classList.add('active'); }
+}));
 function mealOpts(){
   return {
     dietPref: $('#diet').value,
@@ -624,7 +665,8 @@ function mealOpts(){
     avoid: [...healthSel].flatMap(h=>HEALTH_AVOID[h]||[]),
     prefer: [...healthSel].flatMap(h=>HEALTH_PREFER[h]||[]),
     budget: $('#budgetChk').checked,
-    health: [...healthSel]
+    health: [...healthSel],
+    allergens: [...allergySel]
   };
 }
 // "Τι έχω στο ψυγείο" — ταίριασμα υλικών με γεύματα
@@ -844,7 +886,11 @@ function pickFood(cat, idx, opts){
     const strict = pool.filter(f=> !(f.av||[]).some(a=>opts.avoid.includes(a)));
     if(strict.length>=2) pool = strict;      // κράτα ποικιλία· fallback αν στερεύει
   }
-  if(!pool.length) pool = FOODS[cat].slice(); // ασφάλεια
+  if(opts.allergens && opts.allergens.length){
+    const safe = pool.filter(f=> !foodHasAllergen(f, opts.allergens));
+    pool = safe;                              // αλλεργίες = αυστηρά (χωρίς επαναφορά)
+  }
+  if(!pool.length){ pool = FOODS[cat].filter(f=> !opts.allergens||!opts.allergens.length||!foodHasAllergen(f,opts.allergens)); if(!pool.length) pool=FOODS[cat].slice(); }
   if(opts.dietPref==='highprotein') pool.sort((a,b)=>b.p-a.p);
   else if(opts.budget) pool.sort((a,b)=>(a.cost||1)-(b.cost||1)); // φθηνότερα πρώτα
   else if(opts.prefer && opts.prefer.length){
@@ -942,6 +988,36 @@ const FOOD_ING = {
 };
 
 // αναλυτικές συνταγές (υλικά 1 μερίδας + εκτέλεση)
+// αλλεργιογόνα ανά υλικό
+const ALLERGEN_MAP = {
+  gluten:['Ψωμί ολικής','Ψωμί','Ζυμαρικά ολικής','Κριθαράκι','Μπουργκούλ','Φρυγανιές ολικής','Παξιμάδι','Πίτα','Granola'],
+  lactose:['Γάλα','Γιαούρτι','Τυρί','Τυρί cottage','Φέτα'],
+  nuts:['Καρύδια','Αμύγδαλα','Ξηροί καρποί','Φυστικοβούτυρο','Ταχίνι','Χαλβάς'],
+  egg:['Αυγά'],
+  fish:['Ψάρι','Σολομός','Τόνος (κονσέρβα)','Γαρίδες','Χταπόδι','Καλαμάρι'],
+  soy:['Τόφου','Σάλτσα σόγιας','Ρόφημα σόγιας']
+};
+const ALLERGEN_NAME={gluten:'Γλουτένη',lactose:'Λακτόζη',nuts:'Ξηροί καρποί',egg:'Αυγό',fish:'Ψάρι/Θαλασσινά',soy:'Σόγια'};
+function foodHasAllergen(food, allergens){
+  const ings=FOOD_ING[food.n]||[];
+  return allergens.some(a=> (ALLERGEN_MAP[a]||[]).some(x=> ings.includes(x)));
+}
+// μετατροπή υλικού σε vegan/νηστίσιμο
+const VSUBST=[
+  [/κοτόπουλο|γαλοπούλα|μοσχάρι|κιμάς κοτόπουλου|μπιφτέκια/i,'όσπρια ή τόφου'],
+  [/σολομός|τόνος|ψάρι|γαρίδες|χταπόδι|καλαμάρι/i,'μανιτάρια/όσπρια'],
+  [/γιαούρτι υψηλής πρωτεΐνης|γιαούρτι/i,'φυτικό γιαούρτι (σόγιας)'],
+  [/γάλα/i,'ρόφημα σόγιας/αμυγδάλου'],
+  [/τυρί cottage/i,'κρέμα τόφου'],
+  [/φέτα/i,'vegan φέτα ή τόφου'],
+  [/τυρί/i,'vegan τυρί'],
+  [/αβγό|αβγά|αυγό|αυγά|ομελέτα/i,'τόφου («scramble») ή λιναρόσπορος (1κ.σ.+3 νερό)'],
+  [/μέλι/i,'σιρόπι αγαύης/σφενδάμου'],
+  [/1 σκουπ πρωτεΐνη|πρωτεΐνη σκόνη/i,'φυτική πρωτεΐνη'],
+  [/μπάρα πρωτεΐνης/i,'vegan μπάρα']
+];
+function veganizeIng(s){ let r=s, ch=false; for(const [re,rep] of VSUBST){ if(re.test(r)){ r=r.replace(re,rep); ch=true; break; } } return {text:r, changed:ch}; }
+
 const RECIPES = {
   'Βρώμη με γάλα, μπανάνα & μέλι':{ing:['60g βρώμη','250ml γάλα','1 μπανάνα','1 κ.γ. μέλι','λίγη κανέλα'],steps:['Βράσε τη βρώμη με το γάλα 3-4′ ανακατεύοντας.','Κόψε τη μπανάνα από πάνω.','Πρόσθεσε μέλι & κανέλα.']},
   'Ελληνικό γιαούρτι 2% με καρύδια & μέλι':{ing:['200g γιαούρτι 2%','20g καρύδια','1 κ.γ. μέλι'],steps:['Βάλε το γιαούρτι σε μπολ.','Πρόσθεσε καρύδια & μέλι.']},
@@ -1019,14 +1095,23 @@ function recipeHtml(name){
   const ings = r.ing.map(x=>scaleIng(x,recipeServings)).join(' · ');
   const fav = favRecipes.has(name);
   return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.82rem;color:var(--brand);font-weight:600">📖 Συνταγή <span style="color:var(--muted);font-weight:400">· ⏱️ ${t}′ · ${df[1]} ${df[0]}${fav?' · ❤️':''}</span></summary>
-    <div style="font-size:.84rem;margin-top:6px;background:var(--panel2);border-radius:8px;padding:8px 10px">
+    <div class="recipeBody" style="font-size:.84rem;margin-top:6px;background:var(--panel2);border-radius:8px;padding:8px 10px">
       <b>Υλικά (${svTxt}):</b> ${ings}
       <ol style="margin:6px 0 0;padding-left:20px">${r.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
-      <div class="no-print" style="display:flex;gap:8px;margin-top:8px">
+      <div class="no-print" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
         <button type="button" data-fav="${enc}" class="btn-ghost" style="padding:3px 10px;font-size:.8rem">${fav?'❤️ Αγαπημένη':'🤍 Αγαπημένη'}</button>
+        <button type="button" data-vegan="${enc}" class="btn-ghost" style="padding:3px 10px;font-size:.8rem">🌱 Vegan/Νηστίσιμη</button>
         <button type="button" data-printrec="${enc}" class="btn-ghost" style="padding:3px 10px;font-size:.8rem">🖨️ Εκτύπωση</button>
       </div>
+      <div class="veganBox" style="display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:6px"></div>
     </div></details>`;
+}
+function veganBoxHtml(name){
+  const r=RECIPES[name]; if(!r) return '';
+  const rows=r.ing.map(x=>{ const sc=scaleIng(x,recipeServings); const v=veganizeIng(sc);
+    return v.changed?`<li><span style="text-decoration:line-through;opacity:.6">${sc}</span> → <b style="color:var(--good)">${v.text}</b></li>`:`<li>${sc} <span style="color:var(--muted)">(ΟΚ)</span></li>`; });
+  const any=r.ing.some(x=>veganizeIng(x).changed);
+  return `<b>🌱 Vegan / Νηστίσιμη έκδοση:</b> ${any?'':'<span style="color:var(--good)">Είναι ήδη κατάλληλη! ✓</span>'}<ul style="margin:6px 0 0;padding-left:20px">${rows.join('')}</ul>`;
 }
 function printRecipe(name){
   const r=RECIPES[name]; if(!r) return;
@@ -1056,6 +1141,10 @@ document.addEventListener('click',e=>{
     if(window.__dietC) $('#dietOut').innerHTML=buildDiet(window.__dietC,window.__dietOpts); renderFavs(); return; }
   const pb=e.target.closest('[data-printrec]');
   if(pb){ printRecipe(decodeURIComponent(pb.dataset.printrec)); return; }
+  const vb=e.target.closest('[data-vegan]');
+  if(vb){ const box=vb.closest('.recipeBody').querySelector('.veganBox');
+    if(box.style.display==='none'){ box.innerHTML=veganBoxHtml(decodeURIComponent(vb.dataset.vegan)); box.style.display='block'; }
+    else box.style.display='none'; return; }
 });
 const ING_CAT = {
   '🥩 Κρέας / Ψάρι / Αυγά':['Κοτόπουλο','Σολομός','Μοσχάρι','Γαλοπούλα','Τόνος (κονσέρβα)','Κιμάς κοτόπουλου','Ψάρι','Γαρίδες','Χταπόδι','Καλαμάρι','Αυγά','Τόφου'],
@@ -1157,7 +1246,8 @@ function buildDiet(c, opts){
       rows += `<div class="meal">
         <div class="mt">${m.label} · ~${kcal} kcal</div>
         <div class="mn">${m.f.n}</div>
-        <div class="mm">${portion}${m.f.note?' · '+m.f.note:''} · ~${round(m.f.p*mult)}g πρωτεΐνη</div>
+        <div class="mm">${portion}${m.f.note?' · '+m.f.note:''}</div>
+        <div class="mm" style="color:var(--brand)">🔥 ~${kcal} kcal · Π ${round(c.protG*m.share)}g · Υ ${round(c.carbG*m.share)}g · Λ ${round(c.fatG*m.share)}g</div>
         ${recipeHtml(m.f.n)}
       </div>`;
     });
@@ -1423,7 +1513,55 @@ const QUOTES=[
   'Η πειθαρχία είναι να επιλέγεις αυτό που θέλεις πραγματικά, αντί για αυτό που θες τώρα.','Ξεκίνα εκεί που είσαι. Χρησιμοποίησε ό,τι έχεις. Κάνε ό,τι μπορείς.'
 ];
 function todayKey(){ return new Date().toISOString().slice(0,10); }
-function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false}; return p.daily[k]; }
+function getDaily(){ const p=curProfile(); if(!p.daily)p.daily={}; const k=todayKey(); if(!p.daily[k])p.daily[k]={water:0,meals:[false,false,false,false,false],workout:false,noSugar:false}; return p.daily[k]; }
+function noSugarStreak(){
+  const dd=curProfile().daily||{}; let s=0, d=new Date();
+  if(!(dd[todayKey()]&&dd[todayKey()].noSugar)) d.setDate(d.getDate()-1);
+  for(let i=0;i<400;i++){ const k=d.toISOString().slice(0,10); if(dd[k]&&dd[k].noSugar){ s++; d.setDate(d.getDate()-1); } else break; }
+  return s;
+}
+function computeStats(){
+  const dd=curProfile().daily||{}, days=Object.values(dd);
+  let workouts=0, perfectDays=0, waterDays=0, noSugarDays=0;
+  days.forEach(d=>{ if(d.workout)workouts++; if((d.meals||[]).every(Boolean)&&d.workout)perfectDays++; if(d.water>=6)waterDays++; if(d.noSugar)noSugarDays++; });
+  const h=(loadHistory()||[]).filter(e=>e.weight!=null).sort((a,b)=>a.date.localeCompare(b.date));
+  const lost = h.length>=2 ? (h[0].weight - h[h.length-1].weight) : 0;
+  return {streak:calcStreak(), noSugarStreak:noSugarStreak(), workouts, perfectDays, waterDays, noSugarDays, activeDays:days.length, lost};
+}
+const ACHIEVEMENTS=[
+  {i:'🎉',t:'Το ξεκίνημα',d:'1η μέρα καταγραφής',f:s=>s.activeDays>=1},
+  {i:'🔥',t:'3 μέρες σερί',d:'3 συνεχόμενες μέρες',f:s=>s.streak>=3},
+  {i:'🔥',t:'7 μέρες σερί',d:'Μια εβδομάδα συνέπεια',f:s=>s.streak>=7},
+  {i:'🔥',t:'14 μέρες σερί',d:'Δύο εβδομάδες!',f:s=>s.streak>=14},
+  {i:'🏆',t:'30 μέρες σερί',d:'Ένας μήνας ασταμάτητος',f:s=>s.streak>=30},
+  {i:'💧',t:'Ενυδάτωση',d:'Στόχος νερού μια μέρα',f:s=>s.waterDays>=1},
+  {i:'💦',t:'7 μέρες νερό',d:'Στόχος νερού 7 μέρες',f:s=>s.waterDays>=7},
+  {i:'💪',t:'Πρώτη προπόνηση',d:'Ολοκλήρωσες 1 προπόνηση',f:s=>s.workouts>=1},
+  {i:'💪',t:'10 προπονήσεις',d:'Σύνολο 10 προπονήσεις',f:s=>s.workouts>=10},
+  {i:'🏋️',t:'50 προπονήσεις',d:'Θηρίο! 50 προπονήσεις',f:s=>s.workouts>=50},
+  {i:'🍽️',t:'Τέλεια μέρα',d:'100% γεύματα + προπόνηση',f:s=>s.perfectDays>=1},
+  {i:'🌟',t:'7 τέλειες μέρες',d:'7 άψογες μέρες',f:s=>s.perfectDays>=7},
+  {i:'🚫🍬',t:'3 μέρες χωρίς ζάχαρη',d:'Αντιστάθηκες 3 μέρες',f:s=>s.noSugarStreak>=3},
+  {i:'🚫🍬',t:'7 μέρες χωρίς ζάχαρη',d:'Μια εβδομάδα καθαρός/ή',f:s=>s.noSugarStreak>=7},
+  {i:'🍭',t:'14 μέρες χωρίς ζάχαρη',d:'Δύο εβδομάδες!',f:s=>s.noSugarStreak>=14},
+  {i:'👑',t:'30 μέρες χωρίς ζάχαρη',d:'Βασιλιάς/ισσα αυτοπειθαρχίας',f:s=>s.noSugarStreak>=30},
+  {i:'⚖️',t:'-1 κιλό',d:'Έχασες 1 κιλό',f:s=>s.lost>=1},
+  {i:'⚖️',t:'-3 κιλά',d:'Έχασες 3 κιλά',f:s=>s.lost>=3},
+  {i:'🎯',t:'-5 κιλά',d:'Έχασες 5 κιλά',f:s=>s.lost>=5},
+  {i:'📅',t:'Μια εβδομάδα μαζί',d:'7 μέρες χρήσης',f:s=>s.activeDays>=7},
+  {i:'📆',t:'Ένας μήνας μαζί',d:'30 μέρες χρήσης',f:s=>s.activeDays>=30}
+];
+function renderAch(){
+  const el=$('#achOut'); if(!el) return;
+  const s=computeStats(); const un=ACHIEVEMENTS.filter(a=>a.f(s)).length;
+  $('#achCount').textContent=`${un}/${ACHIEVEMENTS.length}`;
+  el.innerHTML=ACHIEVEMENTS.map(a=>{ const on=a.f(s);
+    return `<div style="text-align:center;padding:12px 8px;border:1px solid var(--line);border-radius:14px;background:${on?'linear-gradient(135deg,var(--brand),var(--brand2))':'var(--panel2)'};color:${on?'#03222b':'var(--muted)'};${on?'':'opacity:.55;filter:grayscale(.6)'}">
+      <div style="font-size:2rem">${on?a.i:'🔒'}</div>
+      <div style="font-weight:700;font-size:.85rem;margin-top:4px">${a.t}</div>
+      <div style="font-size:.72rem;margin-top:2px">${a.d}</div></div>`;
+  }).join('');
+}
 function greetTime(){ const h=new Date().getHours(); return h<12?'Καλημέρα':h<18?'Καλησπέρα':'Καλό βράδυ'; }
 function adherence(d){ return Math.round(((d.meals||[]).filter(Boolean).length+(d.workout?1:0))/6*100); }
 function dayOfYear(dt){ return Math.floor((dt-new Date(dt.getFullYear(),0,0))/86400000); }
@@ -1470,14 +1608,69 @@ function renderToday(){
     html+=`<div class="note">🧘 Μέρα ξεκούρασης / ενεργής αποκατάστασης — χαλαρό περπάτημα & διατάσεις.</div>`;
   }
   html+=`</div>`;
+  // no-sugar
+  html+=`<div class="card" style="margin:0 0 14px"><label style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" id="noSugarChk" ${day.noSugar?'checked':''} style="width:auto;flex:0 0 auto"> <span style="font-weight:600">🚫🍬 Χωρίς ζάχαρη σήμερα</span></label>
+    <div class="hint" style="margin-top:6px">Σερί χωρίς ζάχαρη: <b style="color:var(--brand)">${noSugarStreak()} ${noSugarStreak()===1?'μέρα':'μέρες'}</b> 🍭</div></div>`;
   // quick weigh-in
   html+=`<div class="card no-print" style="margin:0"><div style="font-weight:600;margin-bottom:8px">⚖️ Γρήγορο ζύγισμα</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="todayWeight" type="number" step="0.1" placeholder="kg" style="width:130px"><button class="btn-primary" id="todayWeighBtn">Καταγραφή</button><span class="hint">→ Πρόοδος</span></div></div>`;
   el.innerHTML=html;
-  $$('#waterGlasses [data-water]').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.water,d=getDaily(); d.water=(i+1===d.water)?i:i+1; saveStore(); renderToday(); }));
-  $$('#todayOut [data-meal]').forEach(c=>c.addEventListener('change',()=>{ const d=getDaily(); d.meals[+c.dataset.meal]=c.checked; saveStore(); renderToday(); }));
-  const wd=$('#woDone'); if(wd) wd.addEventListener('change',()=>{ getDaily().workout=wd.checked; saveStore(); });
-  const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); });
+  $$('#waterGlasses [data-water]').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.water,d=getDaily(); d.water=(i+1===d.water)?i:i+1; saveStore(); renderToday(); renderAch(); }));
+  $$('#todayOut [data-meal]').forEach(c=>c.addEventListener('change',()=>{ const d=getDaily(); d.meals[+c.dataset.meal]=c.checked; saveStore(); renderToday(); renderAch(); }));
+  const wd=$('#woDone'); if(wd) wd.addEventListener('change',()=>{ getDaily().workout=wd.checked; saveStore(); renderAch(); });
+  const ns=$('#noSugarChk'); if(ns) ns.addEventListener('change',()=>{ getDaily().noSugar=ns.checked; saveStore(); renderToday(); renderAch(); });
+  const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); renderAch(); });
+}
+
+/* ================= ΚΟΥΙΖ ΓΝΩΣΕΩΝ ================= */
+const QUIZ=[
+  {q:'Πόσες θερμίδες έχει περίπου 1 γραμμάριο πρωτεΐνης;',o:['4 kcal','9 kcal','7 kcal'],c:0,e:'Πρωτεΐνη & υδατάνθρακες ~4 kcal/g, λίπος ~9, αλκοόλ ~7.'},
+  {q:'Ποιο μακροθρεπτικό έχει τις περισσότερες θερμίδες ανά γραμμάριο;',o:['Υδατάνθρακες','Λίπος','Πρωτεΐνη'],c:1,e:'Το λίπος ~9 kcal/g.'},
+  {q:'Τι μετράει ο Δείκτης Μάζας Σώματος (BMI);',o:['Βάρος προς ύψος²','Λίπος σώματος','Μυϊκή μάζα'],c:0,e:'BMI = βάρος(kg)/ύψος²(m). Δεν διαχωρίζει λίπος/μυ.'},
+  {q:'Πόσο νερό περίπου χρειάζεται ένας ενήλικας/ημέρα;',o:['0,5 L','1,5-2,5 L','5-6 L'],c:1,e:'Περίπου 30-35 ml/kg — ~2 L για τους περισσότερους.'},
+  {q:'Ποια τροφή είναι πλουσιότερη σε πρωτεΐνη;',o:['Στήθος κοτόπουλου','Ρύζι','Μπανάνα'],c:0,e:'Το κοτόπουλο ~25-30g πρωτεΐνη/100g.'},
+  {q:'Για χτίσιμο μυών, πόση πρωτεΐνη προτείνεται;',o:['0,4 g/kg','1,6-2,2 g/kg','5 g/kg'],c:1,e:'~1,6-2,2 g/kg σωματικού βάρους.'},
+  {q:'Τι είναι το «έλλειμμα θερμίδων»;',o:['Τρως λιγότερες από όσες καις','Τρως περισσότερες','Δεν τρως καθόλου'],c:0,e:'Απαραίτητο για απώλεια λίπους.'},
+  {q:'Ποιο λίπος θεωρείται «καλό»;',o:['Trans λιπαρά','Μονοακόρεστα (ελαιόλαδο)','Τηγανητά'],c:1,e:'Μονοακόρεστα/ω-3: ελαιόλαδο, ψάρι, ξηροί καρποί.'},
+  {q:'Πόσες μερίδες λαχανικά/φρούτα προτείνονται/ημέρα;',o:['1','5+','Καμία'],c:1,e:'Τουλάχιστον 5 μερίδες.'},
+  {q:'Τι κάνει η προοδευτική υπερφόρτωση;',o:['Σταθερά βάρη','Σταδιακή αύξηση φορτίου','Μόνο καρδιο'],c:1,e:'Σταδιακά αυξάνεις βάρος/επαναλήψεις για πρόοδο.'},
+  {q:'Πόσο συχνά καλό είναι να γυμνάζεται κάθε μυς;',o:['1×/εβδ','~2×/εβδ','10×/εβδ'],c:1,e:'~2 φορές/εβδομάδα για βέλτιστη ανάπτυξη.'},
+  {q:'Τι είναι το TDEE;',o:['Συνολική ημερήσια δαπάνη ενέργειας','Βάρος στόχος','Μυϊκός δείκτης'],c:0,e:'Total Daily Energy Expenditure.'},
+  {q:'Ποιο ρόφημα ενυδατώνει καλύτερα;',o:['Νερό','Αναψυκτικό','Ενεργειακό ποτό'],c:0,e:'Το νερό — χωρίς ζάχαρη/θερμίδες.'},
+  {q:'Οι φυτικές ίνες βοηθούν κυρίως:',o:['Στον κορεσμό & πέψη','Στη μυϊκή μάζα','Στην ενυδάτωση'],c:0,e:'Χορταίνεις & βοηθούν το πεπτικό.'},
+  {q:'Τι είναι οι «κενές θερμίδες»;',o:['Θερμίδες χωρίς θρεπτικά (ζάχαρη)','Μηδέν θερμίδες','Πρωτεΐνη'],c:0,e:'Ζάχαρη, αναψυκτικά, γλυκά.'},
+  {q:'Πόσες ώρες ύπνο χρειάζεται ενήλικας;',o:['3-4','7-9','12+'],c:1,e:'7-9 ώρες — κρίσιμος για αποκατάσταση.'},
+  {q:'Η μεσογειακή διατροφή βασίζεται σε:',o:['Επεξεργασμένα','Λαχανικά, ελαιόλαδο, ψάρι','Fast food'],c:1,e:'Λαχανικά, όσπρια, ελαιόλαδο, ψάρι, ολικής.'},
+  {q:'Ποιο είναι πλούσιο σε ω-3;',o:['Σολομός','Λευκό ψωμί','Πατάτες'],c:0,e:'Λιπαρά ψάρια (σολομός, σαρδέλα).'},
+  {q:'Πόσο αλάτι/ημέρα προτείνει ο ΠΟΥ (max);',o:['~5 g','20 g','50 g'],c:0,e:'<5 g/ημέρα (~1 κ.γ.) για την πίεση.'},
+  {q:'Τι είναι η «άλιπη μάζα»;',o:['Το λίπος','Σώμα χωρίς λίπος (μυς/οστά/νερό)','Μόνο μυς'],c:1,e:'Ό,τι δεν είναι λίπος.'},
+  {q:'Η ορθόδοξη νηστεία αποκλείει κυρίως:',o:['Λαχανικά','Κρέας/γαλακτοκομικά/αυγά','Ψωμί'],c:1,e:'Χωρίς ζωικά (πλην θαλασσινών χωρίς κόκαλο τις επιτρεπτές μέρες).'},
+  {q:'Πόσο συχνά να επανυπολογίζεις θερμίδες;',o:['Ποτέ','Κάθε 4-6 εβδ ή ανά ~5 κιλά','Κάθε ώρα'],c:1,e:'Το TDEE αλλάζει με το βάρος.'}
+];
+let quizI=0, quizScore=0, quizAnswered=false, quizOrder=[];
+function startQuiz(){ quizOrder=QUIZ.map((_,i)=>i).sort(()=>Math.random()-0.5); quizI=0; quizScore=0; renderQuiz(); }
+function renderQuiz(){
+  const el=$('#quizOut'); if(!el) return;
+  if(!quizOrder.length){ startQuiz(); return; }
+  if(quizI>=quizOrder.length){
+    const pct=Math.round(quizScore/quizOrder.length*100);
+    el.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:2.6rem">${pct>=80?'🏆':pct>=50?'👍':'💪'}</div><div style="font-size:1.2rem;font-weight:700;margin:8px 0">Σκορ: ${quizScore}/${quizOrder.length} (${pct}%)</div><div class="hint">${pct>=80?'Εξαιρετικά! Ξέρεις τη διατροφή σου.':pct>=50?'Καλά! Συνέχισε να μαθαίνεις.':'Μάθε από τις εξηγήσεις & ξαναπροσπάθησε!'}</div><button class="btn-primary" id="quizRestart" style="margin-top:12px">🔄 Ξανά</button></div>`;
+    $('#quizRestart').addEventListener('click',startQuiz); return;
+  }
+  const Q=QUIZ[quizOrder[quizI]];
+  el.innerHTML=`<div class="card">
+    <div class="hint" style="margin-bottom:6px">Ερώτηση ${quizI+1}/${quizOrder.length} · Σκορ: ${quizScore}</div>
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:12px">${Q.q}</div>
+    <div id="quizOpts" style="display:flex;flex-direction:column;gap:8px">${Q.o.map((o,i)=>`<button type="button" class="btn-ghost" data-opt="${i}" style="text-align:left;padding:12px 14px">${o}</button>`).join('')}</div>
+    <div id="quizFb" style="margin-top:12px"></div></div>`;
+  quizAnswered=false;
+  $$('#quizOpts [data-opt]').forEach(b=>b.addEventListener('click',()=>{
+    if(quizAnswered)return; quizAnswered=true; const pick=+b.dataset.opt, ok=pick===Q.c; if(ok)quizScore++;
+    $$('#quizOpts [data-opt]').forEach(x=>{ const i=+x.dataset.opt; x.style.pointerEvents='none';
+      if(i===Q.c){ x.style.background='var(--good)'; x.style.color='#fff'; } else if(i===pick){ x.style.background='var(--bad)'; x.style.color='#fff'; } });
+    $('#quizFb').innerHTML=`<div class="note">${ok?'✅ Σωστά!':'❌ Λάθος.'} ${Q.e}</div><button class="btn-primary" id="quizNext" style="margin-top:8px">Επόμενη →</button>`;
+    $('#quizNext').addEventListener('click',()=>{ quizI++; renderQuiz(); });
+  }));
 }
 
 /* ================= RENDER ================= */
@@ -1550,6 +1743,7 @@ function render(){
     + (c.lean!=null?` <br>🎯 <b>Εξατομικευμένο:</b> η πρωτεΐνη (${c.protG}g) & οι θερμίδες υπολογίστηκαν με βάση την <b>άλιπη μάζα σου (~${c.lean} kg)</b> από τις μετρήσεις — πιο ακριβές πρόγραμμα.`:'');
   if(opts.fast) dn+=` <br>🕊️ <b>Νηστίσιμο πρόγραμμα</b>${opts.fishDay?' (με ψάρι/θαλασσινά)':' (χωρίς κρέας/γαλακτοκομικά/αυγά)'}.`;
   if(opts.health.length) dn+=` <br>🩺 Προσαρμογή για: <b>${opts.health.map(h=>HEALTH_NAME[h]).join(', ')}</b>. ${opts.health.map(h=>HEALTH_TIP[h]).join(' ')}`;
+  if(opts.allergens&&opts.allergens.length) dn+=` <br>🚫 Χωρίς: <b>${opts.allergens.map(a=>ALLERGEN_NAME[a]).join(', ')}</b> — αποκλείστηκαν οι σχετικές τροφές.`;
   if(opts.budget){
     const week=weekMeals(opts); let cost=0;
     const factor=Math.min(1.5,Math.max(0.7,(c.target||2000)/2000));
@@ -1581,9 +1775,10 @@ function render(){
   // tips
   $('#tipsOut').innerHTML=buildTips(c);
 
-  // «Σήμερα» daily dashboard
+  // «Σήμερα» daily dashboard + επιτεύγματα
   window.__plan={c, opts, days:+days, wo};
   renderToday();
+  renderAch();
   try{ localStorage.setItem('fitplan_generated','1'); }catch(e){}
 
   // goal weight line on the progress chart
@@ -1614,7 +1809,7 @@ function collectInputs(){
     mNeck:$('#mNeck').value, mWaist:$('#mWaist').value, mHip:$('#mHip').value,
     mChest:$('#mChest').value, mArm:$('#mArm').value, mThigh:$('#mThigh').value,
     fast:$('#fastChk').checked, fishDay:$('#fishChk').checked, budget:$('#budgetChk').checked,
-    health:[...healthSel], workoutStyle:$('#workoutStyle').value, ...state
+    health:[...healthSel], allergens:[...allergySel], workoutStyle:$('#workoutStyle').value, ...state
   };
 }
 function applyInputs(d){
@@ -1627,6 +1822,7 @@ function applyInputs(d){
   if('fast' in d){ $('#fastChk').checked=!!d.fast; $('#fishChk').checked=!!d.fishDay; updateFastRow(); }
   if('budget' in d) $('#budgetChk').checked=!!d.budget;
   if(Array.isArray(d.health)){ healthSel.clear(); d.health.forEach(h=>healthSel.add(h)); $$('#healthChips button').forEach(b=>b.classList.toggle('active',healthSel.has(b.dataset.h))); }
+  if(Array.isArray(d.allergens)){ allergySel.clear(); d.allergens.forEach(a=>allergySel.add(a)); $$('#allergyChips button').forEach(b=>b.classList.toggle('active',allergySel.has(b.dataset.a))); }
   if(d.workoutStyle){ $('#workoutStyle').value=d.workoutStyle; updateStyleUI(); }
   const setSeg=(id,key,val)=>{$$('#'+id+' button').forEach(b=>{
     const bv = id==='actSeg'?parseFloat(b.dataset.v):b.dataset.v;
@@ -2322,10 +2518,11 @@ $('#installNow').addEventListener('click',async()=>{
   $('#recDate').value=new Date().toISOString().slice(0,10);
   renderProgress();
   maybeShowBanner();
+  startQuiz();
   // returning users → go straight to today's dashboard
   let gen=false; try{ gen=localStorage.getItem('fitplan_generated')==='1'; }catch(e){}
   if(gen && +$('#age').value>0 && +$('#height').value>0 && +$('#weight').value>0){ try{ render(); }catch(e){} }
-  else renderToday();
+  else { renderToday(); renderAch(); }
 })();
 </script>
 </body>
