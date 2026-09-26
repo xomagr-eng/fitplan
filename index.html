@@ -512,6 +512,16 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px}
         <div id="progChips" class="tabs" style="margin-bottom:8px"></div>
         <div id="chartWrap" style="overflow-x:auto"></div>
         <div id="histTable" style="margin-top:14px"></div>
+        <details class="no-print" style="margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:10px 14px">
+          <summary style="cursor:pointer;font-weight:600">📸 Φωτογραφίες προόδου</summary>
+          <div style="margin-top:10px">
+            <input type="file" id="photoIn" accept="image/*" capture="environment" style="display:none">
+            <button class="btn-primary" id="photoBtn">📷 Προσθήκη φωτογραφίας</button>
+            <div class="hint" style="margin-top:6px">Οι φωτογραφίες μένουν <b>τοπικά στη συσκευή σου</b> (σμικρύνονται αυτόματα). Ιδανικά ίδια στάση/φωτισμό κάθε φορά.</div>
+            <div id="photoCompare" style="margin-top:12px"></div>
+            <div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px"></div>
+          </div>
+        </details>
       </div>
 
       <div class="tabpane" id="tab-ach">
@@ -735,7 +745,8 @@ function calcFrom(I){
   const adj = {lose:{mild:-0.10,normal:-0.20,aggr:-0.25},
                maintain:{mild:0,normal:0,aggr:0},
                gain:{mild:0.08,normal:0.12,aggr:0.18}}[I.goal][I.rate];
-  let target = tdee*(1+adj);
+  const calAdj = parseFloat(I.calAdj)||0;   // 🤖 προσαρμογή από τον έξυπνο προπονητή
+  let target = tdee*(1+adj) + calAdj;
   // safety floor
   const floor = sex==='male'?1500:1200;
   if(target<floor) target=floor;
@@ -1528,6 +1539,50 @@ function computeStats(){
   const lost = h.length>=2 ? (h[0].weight - h[h.length-1].weight) : 0;
   return {streak:calcStreak(), noSugarStreak:noSugarStreak(), workouts, perfectDays, waterDays, noSugarDays, activeDays:days.length, lost};
 }
+/* 🔔 Υπενθυμίσεις (λειτουργούν όσο η εφαρμογή είναι ανοιχτή) */
+function loadRem(){ try{ return Object.assign({enabled:false,water:true,meals:true,workout:true}, JSON.parse(localStorage.getItem('fitplan_reminders'))||{}); }catch(e){ return {enabled:false,water:true,meals:true,workout:true}; } }
+function saveRem(r){ try{ localStorage.setItem('fitplan_reminders',JSON.stringify(r)); }catch(e){} }
+let remTimers=[];
+function notify(title,body){ try{ if(typeof Notification!=='undefined'&&Notification.permission==='granted') new Notification(title,{body,icon:'icon-192.png'}); }catch(e){} }
+function scheduleReminders(){
+  remTimers.forEach(t=>clearTimeout(t)); remTimers=[];
+  const r=loadRem(); if(!r.enabled) return;
+  if(typeof Notification==='undefined'||Notification.permission!=='granted') return;
+  const now=new Date();
+  const at=(h,m,title,body)=>{ const t=new Date(); t.setHours(h,m,0,0); const ms=t-now; if(ms>0&&ms<86400000) remTimers.push(setTimeout(()=>notify(title,body),ms)); };
+  if(r.meals){ at(9,0,'🍽️ Πρωινό','Ώρα για πρωινό!'); at(13,0,'🍽️ Μεσημεριανό','Ώρα για μεσημεριανό!'); at(20,0,'🍽️ Βραδινό','Ώρα για βραδινό!'); }
+  if(r.workout) at(18,0,'💪 Προπόνηση','Ώρα για γυμναστική!');
+  if(r.water) for(let hh=10;hh<=20;hh+=2) at(hh,0,'💧 Νερό','Πιες ένα ποτήρι νερό!');
+}
+async function enableReminders(on){
+  const r=loadRem();
+  if(on){
+    if(typeof Notification==='undefined'){ alert('Ο browser σου δεν υποστηρίζει ειδοποιήσεις.'); return false; }
+    let p=Notification.permission; if(p==='default'){ try{ p=await Notification.requestPermission(); }catch(e){} }
+    if(p!=='granted'){ alert('Δώσε άδεια ειδοποιήσεων για να λειτουργήσουν οι υπενθυμίσεις.'); return false; }
+  }
+  r.enabled=on; saveRem(r); scheduleReminders(); return true;
+}
+function coachAdvice(){
+  const g=(curProfile().inputs&&curProfile().inputs.goal)||'maintain';
+  if(g==='maintain') return null;
+  const h=(loadHistory()||[]).filter(e=>e.weight!=null).sort((a,b)=>a.date.localeCompare(b.date));
+  const last=h.filter(e=>(Date.now()-new Date(e.date))/86400000<=28);
+  if(last.length<4) return null;
+  const spanDays=(new Date(last[last.length-1].date)-new Date(last[0].date))/86400000;
+  if(spanDays<12) return null;
+  const xs=last.map(e=>(new Date(e.date)-new Date(last[0].date))/86400000), ys=last.map(e=>e.weight);
+  const n=xs.length, sx=xs.reduce((a,b)=>a+b,0), sy=ys.reduce((a,b)=>a+b,0), sxx=xs.reduce((a,b)=>a+b*b,0), sxy=xs.reduce((a,b,i)=>a+b*ys[i],0);
+  const slopeWk=((n*sxy-sx*sy)/((n*sxx-sx*sx)||1))*7;
+  if(g==='lose'){
+    if(slopeWk>=-0.1) return {msg:`Το βάρος σου σχεδόν σταθεροποιήθηκε (~${slopeWk.toFixed(2)} kg/εβδ) τις τελευταίες ~${Math.round(spanDays)} μέρες. Για να ξεκολλήσεις, <b>μείωσε ~150 kcal/ημέρα</b>.`,delta:-150};
+    if(slopeWk<-1.1) return {msg:`Χάνεις πολύ γρήγορα (~${slopeWk.toFixed(2)} kg/εβδ) — κίνδυνος απώλειας μυών. <b>Πρόσθεσε ~150 kcal/ημέρα</b>.`,delta:150};
+    return {msg:`Πάς τέλεια! Χάνεις ~${Math.abs(slopeWk).toFixed(2)} kg/εβδ. Συνέχισε έτσι. 💪`,delta:0};
+  }
+  if(slopeWk<=0.05) return {msg:`Το βάρος δεν ανεβαίνει (~${slopeWk.toFixed(2)} kg/εβδ). <b>Πρόσθεσε ~150 kcal/ημέρα</b> για ανάπτυξη.`,delta:150};
+  if(slopeWk>0.6) return {msg:`Ανεβαίνεις γρήγορα (~${slopeWk.toFixed(2)} kg/εβδ) — πιθανό περιττό λίπος. <b>Μείωσε ~150 kcal</b>.`,delta:-150};
+  return {msg:`Ωραία πρόοδος! +${slopeWk.toFixed(2)} kg/εβδ. Συνέχισε. 💪`,delta:0};
+}
 const ACHIEVEMENTS=[
   {i:'🎉',t:'Το ξεκίνημα',d:'1η μέρα καταγραφής',f:s=>s.activeDays>=1},
   {i:'🔥',t:'3 μέρες σερί',d:'3 συνεχόμενες μέρες',f:s=>s.streak>=3},
@@ -1587,6 +1642,16 @@ function renderToday(){
     <div style="margin-top:8px;font-style:italic">«${quote}»</div>
     <div style="margin-top:10px;font-weight:700">🔥 Σερί συνέπειας: ${streak} ${streak===1?'μέρα':'μέρες'}${streak>=3?' — μπράβο!':''}</div>
   </div>`;
+  // 🤖 έξυπνος προπονητής
+  const adv=coachAdvice(), curAdj=curProfile().calAdj||0;
+  if(adv){
+    html+=`<div class="card" style="margin:0 0 14px;border-left:4px solid var(--brand)">
+      <div style="font-weight:700;margin-bottom:4px">🤖 Ο προπονητής σου</div>
+      <div style="font-size:.9rem">${adv.msg}</div>
+      ${adv.delta?`<button class="btn-primary no-print" id="coachApply" style="margin-top:10px">✅ Εφαρμογή (${adv.delta>0?'+':''}${adv.delta} kcal)</button>`:''}
+      ${curAdj?`<div class="hint" style="margin-top:8px">Τρέχουσα προσαρμογή: <b>${curAdj>0?'+':''}${curAdj} kcal</b> · <a href="#" id="coachReset" class="no-print">μηδενισμός</a></div>`:''}
+    </div>`;
+  }
   // water
   const wT=Math.max(6,Math.round((P.c.water||2)/0.25));
   html+=`<div class="card" style="margin:0 0 14px"><div style="font-weight:600;margin-bottom:8px">💧 Νερό — ${day.water}/${wT} ποτήρια <span class="hint">(${(day.water*0.25).toFixed(2)}L / ${(P.c.water||2).toFixed(1)}L)</span></div>
@@ -1611,6 +1676,16 @@ function renderToday(){
   // no-sugar
   html+=`<div class="card" style="margin:0 0 14px"><label style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" id="noSugarChk" ${day.noSugar?'checked':''} style="width:auto;flex:0 0 auto"> <span style="font-weight:600">🚫🍬 Χωρίς ζάχαρη σήμερα</span></label>
     <div class="hint" style="margin-top:6px">Σερί χωρίς ζάχαρη: <b style="color:var(--brand)">${noSugarStreak()} ${noSugarStreak()===1?'μέρα':'μέρες'}</b> 🍭</div></div>`;
+  // reminders
+  const rem=loadRem();
+  html+=`<details class="card no-print" style="margin:0 0 14px"><summary style="cursor:pointer;font-weight:600">🔔 Υπενθυμίσεις ${rem.enabled?'<span style="color:var(--good)">(ενεργές)</span>':'(ανενεργές)'}</summary>
+    <div style="margin-top:10px">
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="remOn" ${rem.enabled?'checked':''} style="width:auto"> <b>Ενεργοποίηση</b></label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" id="remWater" ${rem.water?'checked':''} style="width:auto"> 💧 Νερό (10:00-20:00, ανά 2ω)</label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" id="remMeals" ${rem.meals?'checked':''} style="width:auto"> 🍽️ Γεύματα (09:00/13:00/20:00)</label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" id="remWorkout" ${rem.workout?'checked':''} style="width:auto"> 💪 Προπόνηση (18:00)</label>
+      <div class="hint" style="margin-top:8px">📌 Δουλεύουν όσο η εφαρμογή είναι ανοιχτή/εγκατεστημένη. Σε τελείως κλειστή εφαρμογή δεν υποστηρίζονται offline.</div>
+    </div></details>`;
   // quick weigh-in
   html+=`<div class="card no-print" style="margin:0"><div style="font-weight:600;margin-bottom:8px">⚖️ Γρήγορο ζύγισμα</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="todayWeight" type="number" step="0.1" placeholder="kg" style="width:130px"><button class="btn-primary" id="todayWeighBtn">Καταγραφή</button><span class="hint">→ Πρόοδος</span></div></div>`;
@@ -1619,6 +1694,10 @@ function renderToday(){
   $$('#todayOut [data-meal]').forEach(c=>c.addEventListener('change',()=>{ const d=getDaily(); d.meals[+c.dataset.meal]=c.checked; saveStore(); renderToday(); renderAch(); }));
   const wd=$('#woDone'); if(wd) wd.addEventListener('change',()=>{ getDaily().workout=wd.checked; saveStore(); renderAch(); });
   const ns=$('#noSugarChk'); if(ns) ns.addEventListener('change',()=>{ getDaily().noSugar=ns.checked; saveStore(); renderToday(); renderAch(); });
+  const ca=$('#coachApply'); if(ca) ca.addEventListener('click',()=>{ const a=coachAdvice(); if(a&&a.delta){ curProfile().calAdj=(curProfile().calAdj||0)+a.delta; saveStore(); render(); } });
+  const cr=$('#coachReset'); if(cr) cr.addEventListener('click',e=>{ e.preventDefault(); curProfile().calAdj=0; saveStore(); render(); });
+  const rOn=$('#remOn'); if(rOn) rOn.addEventListener('change',async()=>{ const ok=await enableReminders(rOn.checked); if(!ok) rOn.checked=false; renderToday(); });
+  ['remWater','remMeals','remWorkout'].forEach(id=>{ const el=$('#'+id); if(el) el.addEventListener('change',()=>{ const r=loadRem(); r.water=$('#remWater').checked; r.meals=$('#remMeals').checked; r.workout=$('#remWorkout').checked; saveRem(r); scheduleReminders(); }); });
   const tb=$('#todayWeighBtn'); if(tb) tb.addEventListener('click',()=>{ const v=parseFloat($('#todayWeight').value); if(!(v>0))return; const h=loadHistory().filter(e=>e.date!==todayKey()); h.push({date:todayKey(),weight:v}); h.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(h); renderProgress(); renderToday(); renderAch(); });
 }
 
@@ -1672,6 +1751,30 @@ function renderQuiz(){
     $('#quizNext').addEventListener('click',()=>{ quizI++; renderQuiz(); });
   }));
 }
+
+/* ================= 📸 ΦΩΤΟΓΡΑΦΙΕΣ ΠΡΟΟΔΟΥ ================= */
+function downscaleImage(file, cb){
+  const img=new Image(), url=URL.createObjectURL(file);
+  img.onload=()=>{ const max=360; let w=img.width,h=img.height;
+    if(w>h){ if(w>max){h=h*max/w;w=max;} } else { if(h>max){w=w*max/h;h=max;} }
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url); cb(cv.toDataURL('image/jpeg',0.55)); };
+  img.onerror=()=>{ URL.revokeObjectURL(url); cb(null); };
+  img.src=url;
+}
+function addPhoto(file){ downscaleImage(file, data=>{ if(!data)return; const p=curProfile(); if(!p.photos)p.photos=[]; p.photos.push({date:todayKey(),img:data}); if(p.photos.length>16)p.photos=p.photos.slice(-16); saveStore(); renderPhotos(); }); }
+function delPhoto(i){ const p=curProfile(); if(!p.photos)return; if(!confirm('Διαγραφή φωτογραφίας;'))return; p.photos.splice(i,1); saveStore(); renderPhotos(); }
+function renderPhotos(){
+  const grid=$('#photoGrid'), cmp=$('#photoCompare'); if(!grid) return;
+  const ph=(curProfile().photos||[]);
+  if(ph.length>=2){ const a=ph[0], b=ph[ph.length-1];
+    cmp.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="text-align:center"><img src="${a.img}" style="width:100%;border-radius:10px"><div class="hint">Πριν · ${fmtDate(a.date)}</div></div><div style="text-align:center"><img src="${b.img}" style="width:100%;border-radius:10px"><div class="hint">Τώρα · ${fmtDate(b.date)}</div></div></div>`;
+  } else cmp.innerHTML='';
+  grid.innerHTML=ph.map((x,i)=>`<div style="text-align:center"><img src="${x.img}" style="width:100%;border-radius:8px"><div class="hint">${fmtDate(x.date)} <button data-delphoto="${i}" class="btn-ghost" style="padding:1px 6px">🗑️</button></div></div>`).join('') || '<div class="hint">Καμία φωτογραφία ακόμη.</div>';
+  $$('#photoGrid [data-delphoto]').forEach(b=>b.addEventListener('click',()=>delPhoto(+b.dataset.delphoto)));
+}
+$('#photoBtn').addEventListener('click',()=>$('#photoIn').click());
+$('#photoIn').addEventListener('change',e=>{ const f=e.target.files[0]; if(f)addPhoto(f); e.target.value=''; });
 
 /* ================= RENDER ================= */
 function render(){
@@ -1809,7 +1912,7 @@ function collectInputs(){
     mNeck:$('#mNeck').value, mWaist:$('#mWaist').value, mHip:$('#mHip').value,
     mChest:$('#mChest').value, mArm:$('#mArm').value, mThigh:$('#mThigh').value,
     fast:$('#fastChk').checked, fishDay:$('#fishChk').checked, budget:$('#budgetChk').checked,
-    health:[...healthSel], allergens:[...allergySel], workoutStyle:$('#workoutStyle').value, ...state
+    health:[...healthSel], allergens:[...allergySel], workoutStyle:$('#workoutStyle').value, calAdj:(curProfile().calAdj||0), ...state
   };
 }
 function applyInputs(d){
@@ -2045,6 +2148,7 @@ function renderProgress(){
     $('#histTable').innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Ημ/νία</th>${head}<th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div>`;
     $$('#histTable button[data-del]').forEach(b=>b.addEventListener('click',()=>deleteEntry(b.dataset.del)));
   } else { $('#histTable').innerHTML=''; }
+  renderPhotos();
 }
 $('#recBtn').addEventListener('click',recordMeasurement);
 
@@ -2519,6 +2623,7 @@ $('#installNow').addEventListener('click',async()=>{
   renderProgress();
   maybeShowBanner();
   startQuiz();
+  scheduleReminders();
   // returning users → go straight to today's dashboard
   let gen=false; try{ gen=localStorage.getItem('fitplan_generated')==='1'; }catch(e){}
   if(gen && +$('#age').value>0 && +$('#height').value>0 && +$('#weight').value>0){ try{ render(); }catch(e){} }
